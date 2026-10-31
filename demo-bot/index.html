@@ -33,6 +33,7 @@
   #chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
   #chat-input { flex: 1; padding: 9px; border: 1px solid var(--line); border-radius: 8px; font-size: .95rem; }
   #chat-form button { background: var(--teal); color:#fff; border:0; border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -54,7 +55,7 @@
 <button id="chat-btn" type="button">Chat with us</button>
 <div id="chat-panel" role="dialog" aria-label="Chat panel">
   <div id="chat-head">Bright Smile Dental <small>Demo assistant — replies instantly</small></div>
-  <div id="chat-log"></div>
+  <div id="chat-log" role="log" aria-live="polite" aria-label="Conversation"></div>
   <div id="chat-menu">
     <button type="button" data-act="book">Book</button>
     <button type="button" data-act="hours">Hours &amp; location</button>
@@ -63,6 +64,7 @@
     <button type="button" data-act="human">Talk to a human</button>
   </div>
   <form id="chat-form">
+    <label class="sr-only" for="chat-input">Type your message</label>
     <input id="chat-input" type="text" placeholder="Type a question…" autocomplete="off">
     <button type="submit">Send</button>
   </form>
@@ -146,11 +148,43 @@ const STOPWORDS = new Set(("a an the is are do does did you your yours we our i 
 const NAMED_INSURERS = ["aetna", "cigna", "metlife", "guardian", "humana", "anthem", "principal", "ameritas", "unitedhealthcare", "uhc", "bluecross", "caresource", "geha"];
 
 const HOURS_TEXT = "Mon–Fri 8am–5pm and Sat 9am–1pm (closed Sundays)";
+const HOLIDAY_NOTE = "Hours can differ on public holidays.";
 const FALLBACK_ANSWER = "I don't want to guess at that one. I can take your name and phone number and have a real person from the office call you back — just tap “Talk to a human” below. Or try asking about hours, prices, insurance, or booking.";
 const HANDOFF_OFFER = "Let me get a person involved so you're not stuck with me. Tap “Talk to a human” and leave your name and number — a staff member will call you back. If it's urgent, please call the office during opening hours (" + HOURS_TEXT + ").";
 const HANDOFF_ANSWER = "Of course — I've flagged this for the team. Leave your name and phone number here and a staff member will call you back. If it's urgent, please call the office during opening hours (" + HOURS_TEXT + ").";
 const MEDICAL_ANSWER = "I can't diagnose anything in chat — that's a question for the dentist. I can take your details and have the office call you, or help you request an exam so the dentist can look in person. Tap “Talk to a human” or “Book” to start.";
 const INSURANCE_CHECK_ANSWER = "We bill many major insurers, so there's a good chance we work with yours — staff will verify your specific plan before your visit and explain any costs. Want me to take your name and number for a verification callback? Tap “Talk to a human”.";
+
+// Small talk: exact-phrase matches only, answered briefly and warmly.
+// These return WITHOUT touching session.misses — a pleasantry is not a
+// failed question and must never push a visitor toward the handoff offer.
+const SMALL_TALK = [
+  { intent: "small_talk_greeting", flow: "flow-1-greeting-menu",
+    phrases: ["hi", "hello", "hey", "hi there", "hello there", "hey there", "howdy", "good morning", "good afternoon", "good evening"],
+    answer: "Hello — good to see you. Ask me about hours, prices, insurance, or booking, or tap “Book” below to request a visit." },
+  { intent: "small_talk_thanks", flow: "flow-3-faq",
+    phrases: ["thanks", "thank you", "thank you so much", "thanks a lot", "thank you very much", "ty", "thx"],
+    answer: "You're welcome. Anything else I can help with?" },
+  { intent: "small_talk_bye", flow: "flow-3-faq",
+    phrases: ["bye", "goodbye", "bye bye", "see you", "see you later", "that is all", "that s all", "nothing else"],
+    answer: "Thanks for stopping by — take care." },
+  { intent: "small_talk_ok", flow: "flow-3-faq",
+    phrases: ["ok", "okay", "great", "perfect", "cool", "awesome", "sounds good", "got it", "makes sense"],
+    answer: "Glad that helps. Anything else you'd like to know?" },
+  { intent: "small_talk_bot", flow: "flow-3-faq",
+    phrases: ["are you a robot", "are you a bot", "are you human", "are you real", "are you a real person", "who are you"],
+    answer: "I'm Bright Smile Dental's automated assistant — not a person. I answer common questions here, and a real person from the office can call you back anytime; just tap “Talk to a human” below." },
+  { intent: "small_talk_help", flow: "flow-1-greeting-menu",
+    phrases: ["help", "menu", "help me", "what can you do", "options", "what are my options"],
+    answer: "I can help with office hours and location, services and prices, insurance checks, and booking requests — or I can have a person call you back. The buttons below cover the same ground." }
+];
+
+function smallTalkFor(norm) {
+  for (const st of SMALL_TALK) {
+    if (st.phrases.includes(norm)) return { intent: st.intent, flow: st.flow, answer: st.answer };
+  }
+  return null;
+}
 
 function normalize(text) {
   let t = (text || "").toLowerCase().replace(/’/g, "'").replace(/‘/g, "'");
@@ -194,8 +228,8 @@ function faqResult(intent, flow) {
 function classify(session, rawText, opts) {
   opts = opts || {};
   const now = opts.now || new Date();
-  const norm = normalize(rawText);
-  const toks = tokens(rawText);
+  let norm = normalize(rawText);
+  let toks = tokens(rawText);
   const has = w => toks.includes(w);
   const hasAny = ws => ws.some(w => toks.includes(w));
 
@@ -214,26 +248,45 @@ function classify(session, rawText, opts) {
     return success({ intent: "medical_question", flow: "flow-6-human-handoff", answer: MEDICAL_ANSWER });
   }
 
-  // 3. Explicit human / complaint / billing dispute -> handoff.
+  // 3. Small talk — brief warm replies that never count as a miss. This
+  // runs before the handoff rule on purpose: "are you human?" is an exact
+  // pleasantry, while "I want to talk to a human" is not, and still hands
+  // off below.
+  const st1 = smallTalkFor(norm);
+  if (st1) return st1;
+
+  // A leading greeting ("hi, what are your hours?") must not swallow the
+  // question after it — strip it and classify the rest.
+  const GREET_PREFIX = /^(hi|hello|hey|good morning|good afternoon|good evening)[\s,]*/;
+  if (GREET_PREFIX.test(norm)) {
+    const rest = norm.replace(GREET_PREFIX, "").trim();
+    if (rest) {
+      norm = rest; toks = tokens(rest);
+      const st2 = smallTalkFor(norm);
+      if (st2) return st2;
+    }
+  }
+
+  // 4. Explicit human / complaint / billing dispute -> handoff.
   if (hasAny(["human", "complaint", "manager", "representative"]) ||
       norm.includes("real person") || norm.includes("someone real") ||
       norm.includes("bill is wrong") || norm.includes("billing dispute")) {
     return success({ intent: "handoff", flow: "flow-6-human-handoff", answer: HANDOFF_ANSWER });
   }
 
-  // 4. Exact utterance match.
+  // 5. Exact utterance match.
   for (const f of FAQS) {
     for (const u of f.utterances) {
       if (normalize(u) === norm) return success(faqResult(f.intent));
     }
   }
 
-  // 5. Named non-Delta insurer -> insurance-check flow (staff verification).
+  // 6. Named non-Delta insurer -> insurance-check flow (staff verification).
   if (!has("delta") && hasAny(NAMED_INSURERS) && hasAny(["take", "accept", "insurance", "cover", "covered", "bill"])) {
     return success({ intent: "insurance_general", flow: "flow-4-insurance-check", answer: INSURANCE_CHECK_ANSWER });
   }
 
-  // 6. Keyword scoring across FAQ intents. Distinctive words (a service or
+  // 7. Keyword scoring across FAQ intents. Distinctive words (a service or
   // topic noun that belongs to essentially one FAQ) count double, so a single
   // clear topic word is enough to match.
   const DISTINCTIVE = new Set(["whitening", "crown", "crowns", "filling", "fillings", "parking", "park",
@@ -278,20 +331,20 @@ function classify(session, rawText, opts) {
         const day = ref !== null ? now.getDay() : now.getDay();
         if (!isOpenAt(day === 0 ? 1 : day, hour)) {
           return success({ intent: "hours", flow: "flow-5-after-hours",
-            answer: "We're closed at that time — our hours are " + HOURS_TEXT + ". I can still take a booking request now and staff will confirm when we reopen. Tap “Book” to start." });
+            answer: "We're closed at that time — our hours are " + HOURS_TEXT + ". " + HOLIDAY_NOTE + " I can still take a booking request now and staff will confirm when we reopen. Tap “Book” to start." });
         }
       }
     }
     return success(faqResult(intent));
   }
 
-  // 6b. "Do you do/offer <something unlisted>?" -> answer with the services
+  // 7b. "Do you do/offer <something unlisted>?" -> answer with the services
   // overview rather than a dead-end fallback.
   if (/\bdo you (do|offer|provide)\b/.test(norm) || norm.includes("what services")) {
     return success(faqResult("services_overview"));
   }
 
-  // 7. Fallback — second consecutive miss escalates to a human offer.
+  // 8. Fallback — second consecutive miss escalates to a human offer.
   session.misses += 1;
   if (session.misses >= 2) {
     return { intent: "fallback-2", flow: "flow-6-human-handoff", answer: HANDOFF_OFFER };
@@ -301,9 +354,12 @@ function classify(session, rawText, opts) {
 
 function greetingFor(now) {
   const open = isOpenAt(now.getDay(), now.getHours() + now.getMinutes() / 60);
+  // Plain disclosure, first thing: this is an automated assistant, not a
+  // person — said once, warmly, before anything is asked of the visitor.
+  const intro = "Hi, this is Bright Smile Dental's automated assistant. I'm not a person, but I can answer common questions, take a booking request, and pass anything else on to the team.";
   return open
-    ? "Hi, this is Bright Smile Dental's assistant. We're open now — hours are " + HOURS_TEXT + ". Ask me a question, or tap a topic below."
-    : "Hi, this is Bright Smile Dental's assistant. The office is currently closed — our hours are " + HOURS_TEXT + ". I can still take a booking request, and staff will confirm when we reopen. Ask me a question, or tap a topic below.";
+    ? intro + " We're open now — hours are " + HOURS_TEXT + ". Ask me a question, or tap a topic below."
+    : intro + " The office is currently closed — our hours are " + HOURS_TEXT + ". " + HOLIDAY_NOTE + " I can still take a booking request, and staff will confirm when we reopen. Ask me a question, or tap a topic below.";
 }
 // === BOT CORE END ===
 </script>
@@ -315,7 +371,7 @@ function greetingFor(now) {
   const log = document.getElementById("chat-log");
   const input = document.getElementById("chat-input");
   const session = createSession();
-  let mode = null; // {kind:'book'|'callback', step, data}
+  let mode = null; // {kind:'book'|'callback'|'insurer', step, data, stage, editKey}
 
   document.getElementById("chat-btn").addEventListener("click", () => {
     panel.classList.toggle("open");
@@ -333,38 +389,152 @@ function greetingFor(now) {
   function addBot(t) { addLine("bot", t); }
   function addUser(t) { addLine("user", t); }
 
+  // Said once, before any phone number is asked for: what the number is
+  // for, and what it will never be used for.
+  const PRIVACY_LINE = "Your number is only used so the office can call you back about your visit. It is never shared, and never used for marketing.";
+  const ESCAPE_REPLY = "No problem — I've stopped that there, and nothing was saved. Ask me a question, or tap a topic below.";
+
   const BOOK_FIELDS = [
     { key: "name", prompt: "Sure — what's your name?" },
-    { key: "phone", prompt: "Thanks. What's the best phone number for the office to call back?", validate: v => (v.replace(/\D/g, "").length >= 7) || "That doesn't look like a full phone number — could you re-enter it?" },
+    { key: "phone", prompt: "Thanks. What's the best phone number for the office to call back?", pre: PRIVACY_LINE, validate: v => (v.replace(/\D/g, "").length >= 7) || "That doesn't look like a full phone number — could you re-enter it?" },
     { key: "when", prompt: "What day and time would you prefer?" },
     { key: "status", prompt: "Are you a new or existing patient?" },
     { key: "reason", prompt: "Last one: what's the visit for — cleaning, checkup, or something else?" }
   ];
+  const CALLBACK_FIELDS = [
+    { key: "name", prompt: "What's your name?" },
+    { key: "phone", prompt: "And the best phone number to reach you?", pre: PRIVACY_LINE }
+  ];
+
+  function fieldsFor(kind) { return kind === "book" ? BOOK_FIELDS : CALLBACK_FIELDS; }
+
+  function askField(field) {
+    if (field.pre) addBot(field.pre);
+    addBot(field.prompt);
+  }
+
+  // Escape words work from ANY step of a capture — a visitor can always
+  // bail out, instead of having "cancel" stored as their name.
+  function isEscape(text) {
+    const n = normalize(text);
+    return ["cancel", "stop", "exit", "quit", "menu", "forget it", "nevermind",
+            "cancel booking", "cancel this", "stop this", "changed my mind",
+            "i changed my mind"].includes(n)
+      || n.startsWith("cancel ") || n.includes("never mind") || n.includes("start over");
+  }
+  function escapeFlow() { mode = null; addBot(ESCAPE_REPLY); }
+
+  // A question typed mid-capture is not an answer — don't store it.
+  function looksLikeQuestion(text) {
+    const t = (text || "").trim();
+    return t.endsWith("?") && /\b(what|when|where|which|who|how|why|do|does|can|could|is|are|will|would)\b/i.test(t);
+  }
 
   function startFlow(kind) {
-    mode = { kind, step: 0, data: {} };
-    addBot(kind === "book"
-      ? "I can take a booking request — staff will call to confirm, and nothing is final until they do. " + BOOK_FIELDS[0].prompt
-      : "Of course. What's your name?");
+    mode = { kind, step: 0, data: {}, stage: "capture", editKey: null };
+    if (kind === "book") addBot("I can take a booking request — staff will call to confirm, and nothing is final until they do.");
+    askField(fieldsFor(kind)[0]);
+  }
+
+  function summaryText(d) {
+    return d.name + ", " + d.phone + ", preferring " + d.when + ", " + d.status + " patient, for: " + d.reason;
+  }
+
+  // Confirm/edit step: the visitor can fix ONE detail instead of starting
+  // over — a single transposed phone digit shouldn't cost the whole lead.
+  function showSummary() {
+    mode.stage = "confirm"; mode.editKey = null;
+    addBot("Here's your request: " + summaryText(mode.data) + ". Does that all look right? Say “yes” to finish, or tell me what to change — for example, “change my phone number”.");
+  }
+
+  function finishBook() {
+    const d = mode.data; mode = null;
+    addBot("Thank you — your request is noted: " + summaryText(d) + ". (Demo only — nothing was sent anywhere.) Staff would call " + d.phone + " to confirm — nothing is final until they do. Anything else I can help with?");
+  }
+
+  function matchField(text) {
+    const n = normalize(text);
+    if (/\b(phone|number|mobile|cell)\b/.test(n)) return "phone";
+    if (/\b(name)\b/.test(n)) return "name";
+    if (/\b(day|time|when|date|appointment)\b/.test(n)) return "when";
+    if (/\b(reason|purpose|cleaning|checkup)\b/.test(n)) return "reason";
+    if (/\b(new|existing|patient|status)\b/.test(n)) return "status";
+    return null;
+  }
+
+  function beginEdit(key) {
+    mode.stage = "edit"; mode.editKey = key;
+    addBot("Of course — let's redo that one.");
+    askField(BOOK_FIELDS.find(f => f.key === key));
+  }
+
+  function confirmInput(text) {
+    if (isEscape(text)) { escapeFlow(); return; }
+    const n = normalize(text);
+    const key = matchField(text);
+    if (key || /\b(change|edit|fix|wrong|update|redo)\b/.test(n)) {
+      if (key) { beginEdit(key); return; }
+      mode.stage = "which";
+      addBot("Which detail should I change — your name, phone number, preferred day and time, whether you're a new or existing patient, or the reason for the visit?");
+      return;
+    }
+    if (/\b(no|nope|incorrect)\b/.test(n)) {
+      mode.stage = "which";
+      addBot("No problem. Which detail is wrong — your name, phone number, preferred day and time, new-or-existing-patient status, or the reason for the visit?");
+      return;
+    }
+    if (["yes", "yeah", "yep", "correct", "ok", "okay", "confirm", "done",
+         "perfect", "all good", "looks good", "sounds good", "that s right"].includes(n)
+        || n.startsWith("yes")) {
+      finishBook(); return;
+    }
+    addBot("I want to be sure I have it right. Say “yes” if it's correct, or name the detail to change — name, phone, day/time, new or existing, or reason.");
+  }
+
+  function whichInput(text) {
+    if (isEscape(text)) { escapeFlow(); return; }
+    const key = matchField(text);
+    if (key) { beginEdit(key); return; }
+    addBot("Which one — name, phone, day/time, new or existing, or reason? Or say “cancel” to stop altogether.");
+  }
+
+  function editInput(text) {
+    const field = BOOK_FIELDS.find(f => f.key === mode.editKey);
+    if (isEscape(text)) { escapeFlow(); return; }
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. " + field.prompt + " Or say “cancel” to stop.");
+      return;
+    }
+    if (field.validate) {
+      const verdict = field.validate(text);
+      if (verdict !== true) { addBot(verdict); return; }
+    }
+    mode.data[field.key] = text;
+    addBot("Updated.");
+    showSummary();
   }
 
   function flowInput(text) {
-    const fields = mode.kind === "book" ? BOOK_FIELDS
-      : [ { key: "name", prompt: "" }, { key: "phone", prompt: "And the best phone number to reach you?" } ];
+    if (mode.kind === "book" && mode.stage === "confirm") { confirmInput(text); return; }
+    if (mode.kind === "book" && mode.stage === "which") { whichInput(text); return; }
+    if (mode.kind === "book" && mode.stage === "edit") { editInput(text); return; }
+    const fields = fieldsFor(mode.kind);
     const field = fields[mode.step];
+    if (isEscape(text)) { escapeFlow(); return; }
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. We're on this step: " + field.prompt + " Type your answer to keep going, or say “cancel” to stop.");
+      return;
+    }
     if (field.validate) {
       const verdict = field.validate(text);
       if (verdict !== true) { addBot(verdict); return; }
     }
     mode.data[field.key] = text;
     mode.step += 1;
-    if (mode.step < fields.length) { addBot(fields[mode.step].prompt); return; }
-    const d = mode.data; const kind = mode.kind; mode = null;
-    if (kind === "book") {
-      addBot("Here's your request: " + d.name + ", " + d.phone + ", preferring " + d.when + ", " + d.status + " patient, for: " + d.reason + ". (Demo only — nothing was sent anywhere.) Staff would call " + d.phone + " to confirm. Anything else I can help with?");
-    } else {
-      addBot("Thanks, " + d.name + " — I've noted " + d.phone + " for a callback. (Demo only — nothing was sent anywhere.) A staff member would follow up from here. Anything else?");
-    }
+    if (mode.step < fields.length) { askField(fields[mode.step]); return; }
+    if (mode.kind === "book") { showSummary(); return; }
+    const d = mode.data; mode = null;
+    addBot("Thanks, " + d.name + " — I've noted " + d.phone + " for a callback. (Demo only — nothing was sent anywhere.) A staff member would follow up from here. Anything else?");
   }
 
   function handleMenu(act) {
@@ -386,6 +556,7 @@ function greetingFor(now) {
     addUser(q); input.value = "";
     if (mode && (mode.kind === "book" || mode.kind === "callback")) { flowInput(q); return; }
     if (mode && mode.kind === "insurer") {
+      if (isEscape(q)) { escapeFlow(); return; }
       mode = null;
       const norm = normalize(q);
       if (norm.includes("delta")) { addBot(FAQ_BY_INTENT.delta_dental.answer); return; }
