@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map — Leaflet + OpenStreetMap</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  #map { height: 480px; }
+  body { font-family: system-ui, sans-serif; margin: 1rem; }
+  button { margin: 0 0.4rem 0.8rem 0; padding: 0.45rem 0.8rem; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>Map (United States / Hillsboro, Oregon)</h1>
+<p>
+  <button id="usBtn" type="button">United States view</button>
+  <button id="hillsboroBtn" type="button">Hillsboro, Oregon view</button>
+</p>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // Views chosen by Jaeger on 2026-10-30:
+  // - Greater scale: the United States in general.
+  // - Single-location centre: Hillsboro, Oregon (city centre only, not a street address).
+  var US_VIEW = { center: [39.8283, -98.5795], zoom: 4 };
+  var HILLSBORO = { center: [45.5229, -122.9898], zoom: 12 };
+
+  var map = L.map("map").setView(US_VIEW.center, US_VIEW.zoom);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  L.marker(HILLSBORO.center).addTo(map).bindPopup("Hillsboro, Oregon");
+
+  document.getElementById("usBtn").addEventListener("click", function () {
+    map.setView(US_VIEW.center, US_VIEW.zoom);
+  });
+  document.getElementById("hillsboroBtn").addEventListener("click", function () {
+    map.setView(HILLSBORO.center, HILLSBORO.zoom);
+  });
+</script>
+</body>
+</html>
