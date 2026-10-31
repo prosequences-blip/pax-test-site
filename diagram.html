@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagram — Mermaid.js</title>
+<style> body { font-family: system-ui, sans-serif; margin: 1rem; } </style>
+</head>
+<body>
+<h1>Example flowchart (Mermaid.js)</h1>
+<pre class="mermaid">
+flowchart TD
+    A[Start: an idea] --> B{Is it free to build?}
+    B -->|Yes| C[Build it locally]
+    B -->|No| D[Find a free alternative]
+    D --> C
+    C --> E[Test it]
+    E --> F[Publish on GitHub Pages]
+</pre>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>
