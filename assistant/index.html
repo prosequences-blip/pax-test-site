@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat with Pax — Prosequences Assistant</title>
+<style>
+  :root{
+    --bg:#0d1526; --panel:#16213a; --panel2:#1b2a4a;
+    --ink:#f2f5fb; --muted:#a9b8d4; --accent:#f5b942; --accent2:#57c7a3;
+    --line:rgba(255,255,255,.12); --dark:#23150a;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: linear-gradient(180deg,#0d1526 0%,#101d38 55%,#0d1526 100%); color: var(--ink); min-height: 100vh; }
+  main { max-width: 720px; margin: 0 auto; padding: 2.2rem 1.2rem 7rem; }
+  h1 { font-size: 1.7rem; margin: 0 0 .3rem; }
+  .sub { color: var(--muted); margin: 0 0 1.2rem; line-height: 1.5; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; }
+  .card h2 { font-size: 1.05rem; margin: .2rem 0 .5rem; }
+  .card p, .card li { line-height: 1.5; color: var(--ink); }
+  .card .note { color: var(--muted); font-size: .92rem; }
+  footer { max-width: 720px; margin: 0 auto; padding: 0 1.2rem 2rem; color: var(--muted); font-size: .85rem; line-height: 1.6; }
+  footer a { color: var(--accent); }
+  #chat-btn { position: fixed; right: 20px; bottom: 20px; padding: 13px 20px; border: 0; border-radius: 999px; background: linear-gradient(135deg,#f5b942,#e07b39); color: var(--dark); font-size: 1rem; font-weight: 650; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  #chat-panel { display: none; position: fixed; right: 20px; bottom: 78px; width: 360px; max-width: 92vw; height: 520px; max-height: 78vh; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.45); flex-direction: column; overflow: hidden; }
+  #chat-panel.open { display: flex; }
+  #chat-head { background: linear-gradient(135deg,#f5b942,#e07b39); color: var(--dark); padding: 10px 14px; font-weight: 650; }
+  #chat-head small { display:block; font-weight: 400; opacity:.8; }
+  #chat-log { flex: 1; overflow-y: auto; padding: 12px; background: #0f1a30; }
+  #chat-log p { margin: .45em 0; line-height: 1.45; max-width: 92%; }
+  .bot { color: var(--ink); }
+  .bot .bubble { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; display: inline-block; }
+  .bot .bubble a { color: var(--accent); font-weight: 650; }
+  .user { text-align: right; }
+  .user .bubble { background: linear-gradient(135deg,#f5b942,#e07b39); color: var(--dark); border-radius: 10px; padding: 7px 10px; display: inline-block; text-align: left; }
+  #chat-menu { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); }
+  #chat-menu button { border: 1px solid var(--accent2); color: var(--accent2); background: transparent; border-radius: 999px; padding: 5px 11px; cursor: pointer; font-size: .85rem; }
+  #chat-menu button:hover { background: rgba(87,199,163,.12); }
+  #chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
+  #chat-input { flex: 1; padding: 9px; border: 1px solid var(--line); border-radius: 8px; font-size: .95rem; background: #0f1a30; color: var(--ink); }
+  #chat-form button { background: linear-gradient(135deg,#f5b942,#e07b39); color: var(--dark); font-weight: 650; border: 0; border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Chat with Pax</h1>
+  <p class="sub">Prosequences' automated assistant. Ask it anything about what we do — it answers in full, right here, with nothing held back until you book.</p>
+  <div class="card">
+    <h2>What Pax can do</h2>
+    <ul>
+      <li>Explain any of our services — computer help &amp; AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — with real detail and a helpful first step for each.</li>
+      <li>Tell you how our pricing works, our hours, and the areas we serve.</li>
+      <li>Take a booking request for a free 15-minute intro call, then hand you the summary and the contact form so <i>you</i> stay in control of sending it.</li>
+      <li>Point you straight to Jaeger — call or text (971) 345-1174 — whenever you'd rather talk to a person.</li>
+    </ul>
+    <p class="note">Pax is an automated assistant, not a person. This chat runs entirely in your browser: nothing you type is sent or stored. If you finish a booking request, Pax shows you the summary and a link to our contact form — sending it is always your choice.</p>
+  </div>
+</main>
+<footer>Prosequences LLC · Hillsboro, Oregon · Mon–Sat 9am–6pm · Call/text (971) 345-1174<br>
+Want to see what a bot like this looks like for a small business? Try our <a href="../demo-bot/">demo chatbot</a>.</footer>
+
+<button id="chat-btn" type="button">Chat with Pax</button>
+<div id="chat-panel" role="dialog" aria-label="Chat panel">
+  <div id="chat-head">Pax — Prosequences assistant <small>Automated assistant — replies instantly</small></div>
+  <div id="chat-log" role="log" aria-live="polite" aria-label="Conversation"></div>
+  <div id="chat-menu">
+    <button type="button" data-act="book">Book a consult</button>
+    <button type="button" data-act="services">Services</button>
+    <button type="button" data-act="prices">Prices</button>
+    <button type="button" data-act="hours">Hours &amp; areas</button>
+    <button type="button" data-act="human">Talk to a human</button>
+  </div>
+  <form id="chat-form">
+    <label class="sr-only" for="chat-input">Type your message</label>
+    <input id="chat-input" type="text" placeholder="Type a question…" autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+// === BOT CORE START ===
+// Pure conversation logic for the Prosequences assistant ("Pax").
+// This exact block is extracted and run by test_shell.js, so the live
+// page and the tests use identical code.
+"use strict";
+
+// ---- Business facts: ONE source of truth ----
+// Weekly schedule by day (0 = Sunday .. 6 = Saturday): [open, close] in
+// 24-hour time, or null when closed. The hours TEXT and the open/closed
+// LOGIC are both derived from this table — change it in this one place.
+const SCHEDULE = [null, [9, 18], [9, 18], [9, 18], [9, 18], [9, 18], [9, 18]];
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_PLURAL = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+const PHONE_TEXT = "(971) 345-1174";
+const FORM_URL = "https://tally.so/r/dbEa8y";
+
+function fmtHour(h) {
+  const hh = ((h + 11) % 12) + 1;
+  return hh + (h % 24 < 12 ? "am" : "pm");
+}
+
+function deriveHoursText(includeClosed) {
+  const order = [1, 2, 3, 4, 5, 6, 0]; // present Mon-first
+  const groups = [], closed = [];
+  for (const d of order) {
+    const s = SCHEDULE[d];
+    if (!s) { closed.push(d); continue; }
+    const last = groups[groups.length - 1];
+    if (last && last.o === s[0] && last.c === s[1] &&
+        order.indexOf(d) === order.indexOf(last.end) + 1) last.end = d;
+    else groups.push({ start: d, end: d, o: s[0], c: s[1] });
+  }
+  let text = groups.map(g =>
+    (g.start === g.end ? DAY_NAMES[g.start] : DAY_NAMES[g.start] + "–" + DAY_NAMES[g.end]) +
+    " " + fmtHour(g.o) + "–" + fmtHour(g.c)).join(", ");
+  if (includeClosed && closed.length) {
+    text += " (closed " + closed.map(d => DAY_PLURAL[d]).join(" and ") + ")";
+  }
+  return text;
+}
+const HOURS_TEXT = deriveHoursText(true);   // "Mon–Sat 9am–6pm (closed Sundays)"
+const HOURS_SHORT = deriveHoursText(false); // "Mon–Sat 9am–6pm"
+const HOLIDAY_NOTE = "Hours can differ on public holidays.";
+
+// Office hours come only from SCHEDULE — never restate them by hand.
+function isOpenAt(day, hourFloat) {
+  const s = SCHEDULE[day];
+  return !!s && hourFloat >= s[0] && hourFloat < s[1];
+}
+
+const FAQS = [
+  { intent: "services_overview", utterances: ["What services do you offer?", "What can you help with?", "What do you do?"],
+    answer: "We offer seven services, all remote-first. Computer help & AI setup: patient help with computers and phones, plus AI tools like ChatGPT and Muse set up and explained. Translation: everyday documents and messages, English–Spanish and other major languages. One-page websites: clean, fast sites with no monthly hosting fees. Bookkeeping: monthly books, categorised and reconciled, ready for tax time. Social media content packs: ready-to-post captions, graphics, and a posting schedule. Copywriting: one-pagers, pages, and emails that sound like you. Inbox Detox: an overflowing email inbox sorted into a system that files itself. Ask me about any of them and I'll give you the full picture." },
+  { intent: "computer_help", utterances: ["My computer is really slow", "Can you help with my laptop?", "Do you set up AI tools?"],
+    answer: "Computer help & AI setup covers the frustrating everyday stuff: accounts and email sorted out, backups set up, a slow computer cleaned up, files and photos organised, and new tools — including AI assistants like ChatGPT and Muse — installed and coached in plain English. It's remote, by phone or video call, and you always type your own passwords; we never ask for them. One thing to try first for a slow computer: do a full restart (not just closing the lid), then check how full the drive is — a nearly full drive is the most common cause we see, and freeing up space often speeds things right up." },
+  { intent: "translation", utterances: ["Do you translate documents?", "Can you translate from Spanish?", "Do you do translation?"],
+    answer: "We translate everyday documents and messages — English–Spanish is our most common pair, and other major languages are available too. The work is machine-assisted and human-checked, and we explain the meaning in plain English so you know exactly what you're signing or sending. It's not certified or legal translation, so documents needing a certified stamp are the exception. A helpful first step: gather the document (a clear photo or scan is fine) and note what it's for — that helps us match the tone." },
+  { intent: "websites", utterances: ["Do you build websites?", "I need a website for my business", "How much is a one-page website?"],
+    answer: "Our one-page websites are clean, fast single pages for small businesses, clubs, and projects: what you do, your hours, and how to reach you, on your own domain, with no monthly hosting fees. The process is simple — a short call about what you need, a draft for you to react to, then we polish and launch it together. Pricing is quoted in full after that first call, before anything starts. A helpful first step: write down the three things a visitor should learn — and the one thing they should do — in the first ten seconds on your page." },
+  { intent: "bookkeeping", utterances: ["Do you do bookkeeping?", "What does bookkeeping include?", "Can you help with QuickBooks?"],
+    answer: "Monthly bookkeeping for micro-businesses and creators: your transactions categorised, accounts reconciled, and tidy records and reports that are ready when tax time comes. It's bookkeeping only — we don't file taxes — but your tax preparer will thank you. To get started smoothly, it helps to gather your last three months of bank and card statements, and to keep business and personal spending in separate accounts from now on; that one habit does most of the work." },
+  { intent: "content_packs", utterances: ["What is a social media content pack?", "Do you make social media posts?", "Can you help with Instagram?"],
+    answer: "Social media content packs are ready-to-post content made for your business: captions written in your voice, graphics to match, and a simple posting schedule — so you don't have to find the time or stare at a blank screen. Tell us about your business once, and each pack arrives ready to go. A helpful first step: pick the one platform your customers actually use most. One strong channel beats three neglected ones." },
+  { intent: "copywriting", utterances: ["Can you write my landing page?", "Do you do copywriting?", "I need help with writing"],
+    answer: "Copywriting is words that do a job: one-pagers, landing pages, and email sequences that sound like you on your best day — clear about what you offer and easy to act on. We draft from a short conversation about your customers, and you approve everything before it goes anywhere. A helpful test you can use today: read your current page out loud. Anywhere it doesn't sound like you talking is exactly what we'd fix." },
+  { intent: "inbox_detox", utterances: ["What is Inbox Detox?", "My inbox has thousands of unread emails", "Can you clean up my email?"],
+    answer: "Inbox Detox is for an email inbox that's gotten away from you — thousands of unread messages, important things buried. We sort, file, and filter it into a system that files itself going forward, and we never ask for your password: you stay in control of your account at all times. A helpful first step: sort your inbox by sender. Seeing the five senders who fill it most tells you exactly where the flood comes from." },
+  { intent: "prices", utterances: ["How much does it cost?", "What are your prices?", "How much do you charge?"],
+    answer: "Most work is quoted per job after a short call, so the price fits the actual job. Two promises: the first conversation is free, and you'll always know the full number before anything starts — no surprises, and nothing begins until you say yes. If you'd like a quote, tap “Book” and I'll take a few details for that free intro call — or keep asking questions here first, whatever suits you." },
+  { intent: "areas", utterances: ["What areas do you serve?", "Do you serve Portland?", "Can you help me if I'm outside Oregon?"],
+    answer: "Locally, we serve Hillsboro, Beaverton, Aloha, Tigard, Tualatin, Sherwood, Lake Oswego, Portland, Cornelius, Forest Grove, North Plains, and Wilsonville — that's where in-person help by arrangement is possible. And because most of our work is remote, by phone or video call, we can help you anywhere. The service list travels even if we don't." },
+  { intent: "hours", utterances: ["What are your hours?", "When are you open?", "Are you open on Saturdays?"],
+    answer: "Our hours are " + HOURS_TEXT + ". Most work happens by appointment — Jaeger confirms every booking request personally, so if you leave a request while we're closed, he'll pick it up when we reopen." },
+  { intent: "booking_how", utterances: ["How do I book?", "How do I get started?", "Can I schedule a call?"],
+    answer: "Booking starts with a free 15-minute intro call. You can start it right here: tap “Book” and I'll take your name, phone number, which service you're interested in, and a day and time that suit you. Then Jaeger calls you back to confirm — nothing is booked until he does. If you'd rather, call or text " + PHONE_TEXT + ", or use our contact form: " + FORM_URL + "." },
+  { intent: "who_team", utterances: ["Who runs Prosequences?", "Who is Jaeger?", "Who is Pax?"],
+    answer: "Prosequences is Jaeger Young — a person — working with Pax, his AI assistant (that's me). Jaeger is your human contact: he does and confirms the work, and he's the one who calls you back. I handle production work behind the scenes and answer questions here. No call centers, no runaround — just the two of us." },
+  { intent: "privacy", utterances: ["Is my information private?", "What do you do with my data?", "Will you share my details?"],
+    answer: "Straight answer: anything you tell us is only used to respond to you and to do the work you ask for. It's never sold or shared, and we never ask for your passwords — for computer help and inbox work, you type your own passwords and stay in control of your accounts at all times. This chat, by the way, runs entirely in your browser; nothing you type here is sent anywhere until you choose to send a request through our form or by phone." },
+  { intent: "turnaround", utterances: ["How long does it take?", "How fast can you do it?", "When would it be done?"],
+    answer: "It depends on the job, and we'd rather be straight with you than invent a date. Small fixes are often turned around in a few days, while monthly bookkeeping and content packs run on a regular rhythm once they're set up. On the free intro call, Jaeger will give you a realistic timeline for your specific job before anything starts — and if we can't meet a deadline, we'll tell you that upfront too." },
+  { intent: "remote_visit", utterances: ["Do you come to my house?", "Can you visit in person?", "Is the work remote?"],
+    answer: "Most of our work is remote, by phone or video call — that's how we can help people anywhere. If you're in our local area (Hillsboro, Portland, Beaverton, and the other towns nearby), in-person help is possible by arrangement. Either way, the first step is the same: a short conversation about what you need." }
+];
+
+const INTENT_KEYWORDS = {
+  services_overview: ["services", "offer", "provide", "everything", "list", "help"],
+  computer_help: ["computer", "laptop", "slow", "pc", "mac", "windows", "setup", "backup", "backups", "files", "photos", "organised", "organized", "chatgpt", "claude", "tools"],
+  translation: ["translation", "translate", "translating", "spanish", "document", "documents", "language", "languages", "letter", "english"],
+  websites: ["website", "websites", "site", "webpage", "web", "page", "domain", "hosting"],
+  bookkeeping: ["bookkeeping", "books", "bookkeeper", "quickbooks", "reconcile", "reconciled", "transactions", "records", "accounts", "tax"],
+  content_packs: ["social", "media", "posts", "posting", "captions", "content", "instagram", "facebook", "pack", "packs", "schedule"],
+  copywriting: ["copywriting", "copy", "write", "writing", "landing", "words"],
+  inbox_detox: ["inbox", "detox", "unread", "emails", "gmail", "spam", "overflowing", "cluttered", "messages"],
+  prices: ["price", "prices", "cost", "much", "charge", "quote", "rates", "fee", "fees", "expensive"],
+  areas: ["area", "areas", "serve", "serves", "located", "location", "where", "hillsboro", "portland", "beaverton", "tigard", "wilsonville", "remote", "anywhere", "oregon"],
+  hours: ["hours", "open", "closed", "close", "when", "saturday", "sundays", "sunday", "monday", "weekend", "now", "tonight", "today"],
+  booking_how: ["book", "booking", "schedule", "appointment", "consult", "intro", "start", "begin", "hire", "call"],
+  who_team: ["who", "jaeger", "pax", "team", "owner", "runs", "company", "behind"],
+  privacy: ["privacy", "private", "data", "share", "shared", "sell", "sold", "secure", "information", "details"],
+  turnaround: ["fast", "long", "quick", "quickly", "soon", "timeline", "deadline", "takes", "take", "wait", "done", "ready"],
+  remote_visit: ["visit", "come", "travel", "meet", "house", "home", "person", "remote"]
+};
+
+const STOPWORDS = new Set(("a an the is are do does did you your yours we our i me my it its of to for in on at and or if so be can could would should what whats when where which who how much many any is are was were have has had will would there here this that with from by about into over under again further then once").split(" "));
+
+const FALLBACK_ANSWER = "I don't want to guess at that one. I can answer questions about our services — computer help & AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — plus prices, hours, and the areas we serve. Or reach Jaeger directly at " + PHONE_TEXT + ", " + HOURS_SHORT + ".";
+const HANDOFF_OFFER = "Let me point you to a person so you're not stuck with me. Call or text Jaeger at " + PHONE_TEXT + " (" + HOURS_SHORT + "), or use our contact form: " + FORM_URL + " — a person reads every message. And I'm happy to keep trying here; ask me about any of our services.";
+const HANDOFF_ANSWER = "Of course. Jaeger is the person behind Prosequences — call or text him at " + PHONE_TEXT + ", " + HOURS_SHORT + ". Our contact form is " + FORM_URL + " and a person reads every message. If you'd like him to call you instead, tap “Book” and I'll take your details for a callback request.";
+const URGENT_ANSWER = "That sounds urgent, and I'm glad you landed here. Two things that help right away: disconnect the computer from Wi-Fi or unplug the network cable, and don't pay anything or call any number shown on a warning screen — those are usually part of the scam. Then call or text Jaeger at " + PHONE_TEXT + " and tell him what you saw. If we're closed, leave a message — urgent messages get picked up first when we reopen.";
+
+// Small talk: exact-phrase matches only, answered briefly and warmly.
+// These return WITHOUT touching session.misses — a pleasantry is not a
+// failed question and must never push a visitor toward the handoff offer.
+const SMALL_TALK = [
+  { intent: "small_talk_greeting", flow: "flow-1-greeting-menu",
+    phrases: ["hi", "hello", "hey", "hi there", "hello there", "hey there", "howdy", "good morning", "good afternoon", "good evening"],
+    answer: "Hello — good to see you. I'm Pax, Prosequences' automated assistant. Ask me about any of our services, prices, hours, or areas — or tap “Book” below to request a free intro call." },
+  { intent: "small_talk_thanks", flow: "flow-3-faq",
+    phrases: ["thanks", "thank you", "thank you so much", "thanks a lot", "thank you very much", "ty", "thx"],
+    answer: "You're welcome. Anything else I can help with?" },
+  { intent: "small_talk_bye", flow: "flow-3-faq",
+    phrases: ["bye", "goodbye", "bye bye", "see you", "see you later", "that is all", "that s all", "nothing else"],
+    answer: "Thanks for stopping by — take care." },
+  { intent: "small_talk_ok", flow: "flow-3-faq",
+    phrases: ["ok", "okay", "great", "perfect", "cool", "awesome", "sounds good", "got it", "makes sense"],
+    answer: "Glad that helps. Anything else you'd like to know?" },
+  { intent: "small_talk_bot", flow: "flow-3-faq",
+    phrases: ["are you a robot", "are you a bot", "are you human", "are you real", "are you a real person", "who are you"],
+    answer: "I'm Pax, Prosequences' automated assistant — not a person. I answer questions and take booking requests here; Jaeger, the person behind Prosequences, does the work and confirms every booking. You can reach him at " + PHONE_TEXT + "." },
+  { intent: "small_talk_help", flow: "flow-1-greeting-menu",
+    phrases: ["help", "menu", "help me", "what can you do", "options", "what are my options"],
+    answer: "I can explain any of our services — computer help & AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — plus prices, hours, and the areas we serve, or take a booking request for a free intro call. The buttons below cover the same ground." }
+];
+
+function smallTalkFor(norm) {
+  for (const st of SMALL_TALK) {
+    if (st.phrases.includes(norm)) return { intent: st.intent, flow: st.flow, answer: st.answer };
+  }
+  return null;
+}
+
+function normalize(text) {
+  let t = (text || "").toLowerCase().replace(/’/g, "'").replace(/‘/g, "'");
+  t = t.replace(/\bwhat's\b/g, "what is").replace(/\bcan't\b/g, "cannot")
+       .replace(/\bdon't\b/g, "do not").replace(/\byou're\b/g, "you are")
+       .replace(/\bi'm\b/g, "i am").replace(/\bisn't\b/g, "is not");
+  t = t.replace(/[^a-z0-9\s]/g, " ");
+  return t.replace(/\s+/g, " ").trim();
+}
+
+function tokens(text) { return normalize(text).split(" ").filter(Boolean); }
+function contentTokens(text) { return tokens(text).filter(w => !STOPWORDS.has(w)); }
+
+const FAQ_BY_INTENT = {};
+for (const f of FAQS) FAQ_BY_INTENT[f.intent] = f;
+
+// Parse an explicit clock reference like "9pm", "21:00" from the text.
+function parseClockRef(normText) {
+  const m = normText.match(/\b(\d{1,2})\s*(pm|am)\b/);
+  if (m) { let h = parseInt(m[1], 10) % 12; if (m[2] === "pm") h += 12; return h; }
+  const m2 = normText.match(/\b(2[0-3]|[01]?\d):([0-5]\d)\b/);
+  if (m2) return parseInt(m2[1], 10) + parseInt(m2[2], 10) / 60;
+  return null;
+}
+
+function createSession() { return { misses: 0 }; }
+
+function faqResult(intent, flow) {
+  return { intent, flow: flow || "flow-3-faq", answer: FAQ_BY_INTENT[intent].answer };
+}
+
+function classify(session, rawText, opts) {
+  opts = opts || {};
+  const now = opts.now || new Date();
+  let norm = normalize(rawText);
+  let toks = tokens(rawText);
+  const has = w => toks.includes(w);
+  const hasAny = ws => ws.some(w => toks.includes(w));
+
+  const success = r => { session.misses = 0; return r; };
+
+  // 1. Urgent trouble first (a possible scam or lockout) — calm first
+  // steps that genuinely help, then the human route. Never a sales flow.
+  const urgent =
+    has("ransomware") || norm.includes("been hacked") || norm.includes("locked out of") ||
+    norm.includes("computer has a virus") || norm.includes("i have a virus") ||
+    norm.includes("virus warning");
+  if (urgent) return success({ intent: "urgent", flow: "flow-6-human-handoff", answer: URGENT_ANSWER });
+
+  // 2. Small talk — brief warm replies that never count as a miss. This
+  // runs before the handoff rule on purpose: "are you human?" is an exact
+  // pleasantry, while "I want to talk to a human" is not, and still hands
+  // off below.
+  const st1 = smallTalkFor(norm);
+  if (st1) return st1;
+
+  // A leading greeting ("hi, what are your hours?") must not swallow the
+  // question after it — strip it and classify the rest.
+  const GREET_PREFIX = /^(hi|hello|hey|good morning|good afternoon|good evening)[\s,]*/;
+  if (GREET_PREFIX.test(norm)) {
+    const rest = norm.replace(GREET_PREFIX, "").trim();
+    if (rest) {
+      norm = rest; toks = tokens(rest);
+      const st2 = smallTalkFor(norm);
+      if (st2) return st2;
+    }
+  }
+
+  // 3. Explicit human / complaint -> handoff (phone + form, immediately).
+  if (hasAny(["human", "complaint", "manager", "representative"]) ||
+      norm.includes("real person") || norm.includes("someone real") ||
+      ((has("talk") || has("speak")) && hasAny(["human", "person", "someone", "jaeger"]))) {
+    return success({ intent: "handoff", flow: "flow-6-human-handoff", answer: HANDOFF_ANSWER });
+  }
+
+  // 4. Exact utterance match.
+  for (const f of FAQS) {
+    for (const u of f.utterances) {
+      if (normalize(u) === norm) return success(faqResult(f.intent));
+    }
+  }
+
+  // 5. Keyword scoring across FAQ intents. Distinctive words (a service
+  // or topic noun that belongs to essentially one FAQ) count double, so a
+  // single clear topic word is enough to match.
+  const DISTINCTIVE = new Set(["bookkeeping", "translation", "translate", "website", "websites",
+    "inbox", "detox", "copywriting", "spanish", "unread", "quickbooks", "hosting", "domain",
+    "captions", "instagram", "facebook", "privacy", "private", "pax", "jaeger", "schedule", "fast", "long"]);
+  const inputTokens = new Set(toks);
+  let best = null, bestScore = 0;
+  for (const f of FAQS) {
+    const keys = new Set(INTENT_KEYWORDS[f.intent] || []);
+    for (const u of f.utterances) for (const w of contentTokens(u)) keys.add(w);
+    let score = 0;
+    for (const w of inputTokens) {
+      const stem = (w.length > 4 && w.endsWith("s") && !w.endsWith("ss")) ? w.slice(0, -1) : w;
+      if (keys.has(w) || keys.has(stem)) score += (DISTINCTIVE.has(w) || DISTINCTIVE.has(stem)) ? 2 : 1;
+    }
+    if (f.intent === "booking_how" && (norm.includes("book me") || norm.includes("schedule me"))) score += 3;
+    // A question that names a clock time is a hours question, even when
+    // "open" is its only keyword ("Are you open at 9pm?").
+    if (f.intent === "hours" && parseClockRef(norm) !== null) score += 2;
+    if (score > bestScore) { bestScore = score; best = f; }
+  }
+
+  if (best && bestScore >= 2) {
+    const intent = best.intent;
+    // Booking *action* (not a how-question) -> booking-request flow.
+    const dayRef = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today)\b/.test(norm);
+    const wantsBooking =
+      norm.includes("book me") || norm.includes("schedule me") ||
+      norm.includes("want to book") || norm.includes("like to book") ||
+      norm.includes("book a") || norm.includes("book an") || norm.includes("schedule a") ||
+      (dayRef && hasAny(["book", "schedule", "appointment", "consult", "call"]));
+    if (intent === "booking_how" && wantsBooking) {
+      return success({ intent, flow: "flow-2-booking-request", answer: FAQ_BY_INTENT.booking_how.answer });
+    }
+    // Hours asked about a specific time (or "right now") -> after-hours check.
+    if (intent === "hours") {
+      const ref = parseClockRef(norm);
+      const mentionsNow = norm.includes("right now") || norm.includes("tonight") || norm.includes("open now");
+      if (ref !== null || mentionsNow) {
+        const hour = ref !== null ? ref : now.getHours() + now.getMinutes() / 60;
+        const day = now.getDay();
+        if (!isOpenAt(day === 0 ? 1 : day, hour)) {
+          return success({ intent: "hours", flow: "flow-5-after-hours",
+            answer: "We're closed at that time — our hours are " + HOURS_TEXT + ". " + HOLIDAY_NOTE + " You can leave a booking request here anytime and Jaeger will confirm when we reopen, or call/text " + PHONE_TEXT + " during hours. Tap “Book” to start." });
+        }
+      }
+    }
+    return success(faqResult(intent));
+  }
+
+  // 5b. "Do you do/offer <something unlisted>?" -> answer with the services
+  // overview rather than a dead-end fallback.
+  if (/\bdo you (do|offer|provide)\b/.test(norm) || norm.includes("what services")) {
+    return success(faqResult("services_overview"));
+  }
+
+  // 6. Fallback — second consecutive miss escalates to the human route.
+  session.misses += 1;
+  if (session.misses >= 2) {
+    return { intent: "fallback-2", flow: "flow-6-human-handoff", answer: HANDOFF_OFFER };
+  }
+  return { intent: "fallback", flow: "flow-3-faq", answer: FALLBACK_ANSWER };
+}
+
+function greetingFor(now) {
+  const open = isOpenAt(now.getDay(), now.getHours() + now.getMinutes() / 60);
+  // Plain disclosure, first thing: this is an automated assistant, not a
+  // person — said once, warmly, before anything is asked of the visitor.
+  const intro = "Hi, this is Prosequences' automated assistant, Pax. I'm not a person, but I can answer questions about our services in full and take a booking request if you'd like one.";
+  return open
+    ? intro + " We're around now — hours are " + HOURS_TEXT + ". Ask me a question, or tap a topic below."
+    : intro + " We're closed right now — our hours are " + HOURS_TEXT + ". " + HOLIDAY_NOTE + " You can still ask questions and leave a booking request, and Jaeger will confirm when we reopen.";
+}
+// === BOT CORE END ===
+</script>
+
+<script>
+// === PAGE WIRING (not part of the tested core) ===
+(function () {
+  const panel = document.getElementById("chat-panel");
+  const log = document.getElementById("chat-log");
+  const input = document.getElementById("chat-input");
+  const session = createSession();
+  let mode = null; // {kind:'book', step, data, stage, editKey}
+
+  document.getElementById("chat-btn").addEventListener("click", () => {
+    panel.classList.toggle("open");
+    if (panel.classList.contains("open") && !log.dataset.greeted) {
+      log.dataset.greeted = "1";
+      addBot(greetingFor(new Date()));
+    }
+  });
+
+  function addLine(cls, text) {
+    const p = document.createElement("p"); p.className = cls;
+    const b = document.createElement("span"); b.className = "bubble"; b.textContent = text;
+    p.appendChild(b); log.appendChild(p); log.scrollTop = log.scrollHeight;
+  }
+  function addBot(t) { addLine("bot", t); }
+  function addUser(t) { addLine("user", t); }
+
+  // A bot line carrying one real link (the contact form). Built with DOM
+  // calls only, so visitor text is never treated as markup.
+  function addBotLink(prefix, href, label) {
+    const p = document.createElement("p"); p.className = "bot";
+    const b = document.createElement("span"); b.className = "bubble";
+    b.textContent = prefix;
+    const a = document.createElement("a");
+    a.href = href; a.target = "_blank"; a.rel = "noopener"; a.textContent = label;
+    b.appendChild(a);
+    p.appendChild(b); log.appendChild(p); log.scrollTop = log.scrollHeight;
+  }
+
+  // Said once, before any phone number is asked for: what the number is
+  // for, and what it will never be used for.
+  const PRIVACY_LINE = "Your number is only used so Jaeger can call you back about your request. It is never shared, and never used for marketing.";
+  const ESCAPE_REPLY = "No problem — I've stopped that there, and nothing was saved. Ask me a question, or tap a topic below.";
+
+  const BOOK_FIELDS = [
+    { key: "name", prompt: "Sure — what's your name?" },
+    { key: "phone", prompt: "Thanks. What's the best phone number for Jaeger to call you back?", pre: PRIVACY_LINE, validate: v => (v.replace(/\D/g, "").length >= 7) || "That doesn't look like a full phone number — could you re-enter it?" },
+    { key: "service", prompt: "Which service is this about — computer help & AI setup, translation, a one-page website, bookkeeping, social media content packs, copywriting, or inbox detox? Your own words are fine too." },
+    { key: "when", prompt: "What day and time would suit you for a short intro call? We're around " + HOURS_SHORT + "." },
+    { key: "status", prompt: "Last one: are you a new client, or have you worked with us before?" }
+  ];
+
+  function askField(field) {
+    if (field.pre) addBot(field.pre);
+    addBot(field.prompt);
+  }
+
+  // Escape words work from ANY step of a capture — a visitor can always
+  // bail out, instead of having "cancel" stored as their name.
+  function isEscape(text) {
+    const n = normalize(text);
+    return ["cancel", "stop", "exit", "quit", "menu", "forget it", "nevermind",
+            "cancel booking", "cancel this", "stop this", "changed my mind",
+            "i changed my mind"].includes(n)
+      || n.startsWith("cancel ") || n.includes("never mind") || n.includes("start over");
+  }
+  function escapeFlow() { mode = null; addBot(ESCAPE_REPLY); }
+
+  // Declining to share a phone number is a complete answer, not an error:
+  // accept warmly, leave the flow, and hand over the other routes. The bot
+  // never asks again and keeps answering questions.
+  function isPhoneDecline(text) {
+    const n = normalize(text);
+    return n === "no" || n === "nope" || n === "no thanks" || n.includes("skip") ||
+      ["rather not", "do not want", "not comfortable", "no phone", "no number",
+       "not giving", "do not have", "won t give", "prefer not"].some(p => n.includes(p));
+  }
+  function declinePhone() {
+    mode = null;
+    addBot("That's completely fine — you don't need to share a number to get help here, and I won't ask again. You can reach Jaeger whichever way suits you: call or text " + PHONE_TEXT + ", or use our contact form — the link is below. And I'm happy to keep answering questions right here.");
+    addBotLink("Contact form: ", FORM_URL, "Send a message via our contact form");
+  }
+
+  // A question typed mid-capture is not an answer — don't store it.
+  function looksLikeQuestion(text) {
+    const t = (text || "").trim();
+    return t.endsWith("?") && /\b(what|when|where|which|who|how|why|do|does|can|could|is|are|will|would)\b/i.test(t);
+  }
+
+  function startFlow(kind) {
+    mode = { kind, step: 0, data: {}, stage: "capture", editKey: null };
+    addBot("I can take a booking request for a free intro call — Jaeger calls you back to confirm, and nothing is booked until he does.");
+    askField(BOOK_FIELDS[0]);
+  }
+
+  function summaryText(d) {
+    return d.name + ", " + d.phone + ", about: " + d.service + ", preferring " + d.when + ", " + d.status + " client";
+  }
+
+  // Confirm/edit step: the visitor can fix ONE detail instead of starting
+  // over — a single transposed phone digit shouldn't cost the whole lead.
+  function showSummary() {
+    mode.stage = "confirm"; mode.editKey = null;
+    addBot("Here's your request: " + summaryText(mode.data) + ". Does that all look right? Say “yes” to finish, or tell me what to change — for example, “change my phone number”.");
+  }
+
+  // Honest finish: this static page cannot send anything by itself, and
+  // the bot says so. The visitor gets the finished summary (ready to
+  // paste), a real link to the contact form, and the phone number. The
+  // request has NOT been sent or stored, and the wording never claims it
+  // was — nothing is booked until Jaeger calls back to confirm.
+  function finishBook() {
+    const d = mode.data; mode = null;
+    addBot("Thank you, " + d.name + " — your request is ready: " + summaryText(d) + ".");
+    addBot("One honest step left: this chat runs in your browser and can't send messages by itself, so nothing has been sent or stored yet. Tap the form link below and paste that summary into the message box — the form only asks for your name, email, and a message — or simply call or text Jaeger at " + PHONE_TEXT + ".");
+    addBotLink("Contact form: ", FORM_URL, "Send it via our contact form");
+    addBot("Nothing is booked until Jaeger calls you back to confirm. Anything else I can help with?");
+  }
+
+  function matchField(text) {
+    const n = normalize(text);
+    if (/\b(phone|number|mobile|cell)\b/.test(n)) return "phone";
+    if (/\b(name)\b/.test(n)) return "name";
+    if (/\b(service|topic|about)\b/.test(n)) return "service";
+    if (/\b(day|time|when|date|call)\b/.test(n)) return "when";
+    if (/\b(new|existing|client|before)\b/.test(n)) return "status";
+    return null;
+  }
+
+  function beginEdit(key) {
+    mode.stage = "edit"; mode.editKey = key;
+    addBot("Of course — let's redo that one.");
+    askField(BOOK_FIELDS.find(f => f.key === key));
+  }
+
+  function confirmInput(text) {
+    if (isEscape(text)) { escapeFlow(); return; }
+    const n = normalize(text);
+    const key = matchField(text);
+    if (key || /\b(change|edit|fix|wrong|update|redo)\b/.test(n)) {
+      if (key) { beginEdit(key); return; }
+      mode.stage = "which";
+      addBot("Which detail should I change — your name, phone number, the service, your preferred day and time, or whether you're a new client?");
+      return;
+    }
+    if (/\b(no|nope|incorrect)\b/.test(n)) {
+      mode.stage = "which";
+      addBot("No problem. Which detail is wrong — your name, phone number, the service, your preferred day and time, or new-or-returning client?");
+      return;
+    }
+    if (["yes", "yeah", "yep", "correct", "ok", "okay", "confirm", "done",
+         "perfect", "all good", "looks good", "sounds good", "that s right"].includes(n)
+        || n.startsWith("yes")) {
+      finishBook(); return;
+    }
+    addBot("I want to be sure I have it right. Say “yes” if it's correct, or name the detail to change — name, phone, service, day/time, or new-or-returning.");
+  }
+
+  function whichInput(text) {
+    if (isEscape(text)) { escapeFlow(); return; }
+    const key = matchField(text);
+    if (key) { beginEdit(key); return; }
+    addBot("Which one — name, phone, service, day/time, or new-or-returning? Or say “cancel” to stop altogether.");
+  }
+
+  function editInput(text) {
+    const field = BOOK_FIELDS.find(f => f.key === mode.editKey);
+    if (isEscape(text)) { escapeFlow(); return; }
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. " + field.prompt + " Or say “cancel” to stop.");
+      return;
+    }
+    if (field.key === "phone" && isPhoneDecline(text)) { declinePhone(); return; }
+    if (field.validate) {
+      const verdict = field.validate(text);
+      if (verdict !== true) { addBot(verdict); return; }
+    }
+    mode.data[field.key] = text;
+    addBot("Updated.");
+    showSummary();
+  }
+
+  function flowInput(text) {
+    if (mode.stage === "confirm") { confirmInput(text); return; }
+    if (mode.stage === "which") { whichInput(text); return; }
+    if (mode.stage === "edit") { editInput(text); return; }
+    const field = BOOK_FIELDS[mode.step];
+    if (isEscape(text)) { escapeFlow(); return; }
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. We're on this step: " + field.prompt + " Type your answer to keep going, or say “cancel” to stop.");
+      return;
+    }
+    if (field.key === "phone" && isPhoneDecline(text)) { declinePhone(); return; }
+    if (field.validate) {
+      const verdict = field.validate(text);
+      if (verdict !== true) { addBot(verdict); return; }
+    }
+    mode.data[field.key] = text;
+    mode.step += 1;
+    if (mode.step < BOOK_FIELDS.length) { askField(BOOK_FIELDS[mode.step]); return; }
+    showSummary();
+  }
+
+  function handleMenu(act) {
+    if (act === "book") { startFlow("book"); return; }
+    if (act === "human") { addBot(HANDOFF_ANSWER); return; }
+    if (act === "services") { addBot(FAQ_BY_INTENT.services_overview.answer); return; }
+    if (act === "prices") { addBot(FAQ_BY_INTENT.prices.answer); return; }
+    if (act === "hours") { addBot(FAQ_BY_INTENT.hours.answer); addBot(FAQ_BY_INTENT.areas.answer); return; }
+  }
+
+  document.getElementById("chat-menu").addEventListener("click", ev => {
+    const btn = ev.target.closest("button[data-act]");
+    if (btn) handleMenu(btn.dataset.act);
+  });
+
+  document.getElementById("chat-form").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const q = input.value.trim(); if (!q) return;
+    addUser(q); input.value = "";
+    if (mode) { flowInput(q); return; }
+    const r = classify(session, q, {});
+    addBot(r.answer);
+    if (r.flow === "flow-2-booking-request") startFlow("book");
+  });
+})();
+</script>
+</body>
+</html>
