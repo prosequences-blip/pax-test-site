@@ -57,7 +57,7 @@
     <p class="note">Pax is an automated assistant, not a person. This chat runs entirely in your browser: nothing you type is sent or stored. If you finish a booking request, Pax shows you the summary and a link to our contact form — sending it is always your choice.</p>
   </div>
 </main>
-<footer>Prosequences LLC · Hillsboro, Oregon · Mon–Sat 9am–6pm · Call/text (971) 345-1174<br>
+<footer>Prosequences LLC · Hillsboro, Oregon · Mon–Sun 12pm–7pm · Call/text (971) 345-1174<br>
 Want to see what a bot like this looks like for a small business? Try our <a href="../demo-bot/">demo chatbot</a>.</footer>
 
 <button id="chat-btn" type="button">Chat with Pax</button>
@@ -89,7 +89,7 @@ Want to see what a bot like this looks like for a small business? Try our <a hre
 // Weekly schedule by day (0 = Sunday .. 6 = Saturday): [open, close] in
 // 24-hour time, or null when closed. The hours TEXT and the open/closed
 // LOGIC are both derived from this table — change it in this one place.
-const SCHEDULE = [null, [9, 18], [9, 18], [9, 18], [9, 18], [9, 18], [9, 18]];
+const SCHEDULE = [[12, 19], [12, 19], [12, 19], [12, 19], [12, 19], [12, 19], [12, 19]];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_PLURAL = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
 const PHONE_TEXT = "(971) 345-1174";
@@ -119,8 +119,8 @@ function deriveHoursText(includeClosed) {
   }
   return text;
 }
-const HOURS_TEXT = deriveHoursText(true);   // "Mon–Sat 9am–6pm (closed Sundays)"
-const HOURS_SHORT = deriveHoursText(false); // "Mon–Sat 9am–6pm"
+const HOURS_TEXT = deriveHoursText(true);   // "Mon–Sun 12pm–7pm"
+const HOURS_SHORT = deriveHoursText(false); // "Mon–Sun 12pm–7pm"
 const HOLIDAY_NOTE = "Hours can differ on public holidays.";
 
 // Office hours come only from SCHEDULE — never restate them by hand.
@@ -236,6 +236,81 @@ function contentTokens(text) { return tokens(text).filter(w => !STOPWORDS.has(w)
 const FAQ_BY_INTENT = {};
 for (const f of FAQS) FAQ_BY_INTENT[f.intent] = f;
 
+// ---- Auto-qualification (Jaeger, 2026-10-31) ----
+// Leads are qualified with a few GENTLE, OPTIONAL questions. They are
+// never the price of an answer: the bot answers fully first, and only
+// then may offer to pass details to Jaeger. Every qualifying question
+// can be skipped, and declining changes nothing about the help offered.
+const SERVICE_LABELS = {
+  computer_help: "Computer help & AI setup",
+  translation: "Translation",
+  websites: "One-page website",
+  bookkeeping: "Bookkeeping",
+  content_packs: "Social media content pack",
+  copywriting: "Copywriting",
+  inbox_detox: "Inbox Detox"
+};
+// One service-specific qualifier per service (from the copy pack).
+const SERVICE_QUALIFIER = {
+  bookkeeping: "Roughly how many months of records are we looking at?",
+  websites: "Do you already have a domain name?",
+  computer_help: "What device is it — Windows, Mac, phone, or something else?",
+  content_packs: "How often would you want posts — one-time or ongoing?",
+  copywriting: "How often would you want copy — one-time or ongoing?",
+  inbox_detox: "Roughly how many unread emails are sitting there?",
+  translation: "What language pair, and roughly how long is the document?"
+};
+// The ordered, skippable qualification plan for a service: two universal
+// questions, the one service-specific question (where we have one), and
+// the preferred-contact question — Jaeger's clients reach him by text or
+// email, so we ask which they prefer.
+function qualifyPlan(intent) {
+  const steps = [
+    { key: "biz", prompt: "Is this for a business, or personal?" },
+    { key: "timeline", prompt: "When are you hoping to get started?" }
+  ];
+  if (intent && SERVICE_QUALIFIER[intent]) {
+    steps.push({ key: "specific", prompt: SERVICE_QUALIFIER[intent] });
+  }
+  steps.push({ key: "contact", prompt: "Should Jaeger reach you by text or email?" });
+  return steps;
+}
+// Map free-text service wording (typed in the booking flow) to a service
+// intent, so the right specific qualifier can be asked. Null = unknown.
+function serviceIntentForText(text) {
+  const n = normalize(text);
+  if (/bookkeep|quickbooks/.test(n)) return "bookkeeping";
+  if (/translat|spanish/.test(n)) return "translation";
+  if (/website|web site|domain|\bsite\b/.test(n)) return "websites";
+  if (/inbox|unread|detox|\bemail/.test(n)) return "inbox_detox";
+  if (/content|social|captions|\bposts\b/.test(n)) return "content_packs";
+  if (/copywrit|landing|\bcopy\b/.test(n)) return "copywriting";
+  if (/computer|laptop|\bmac\b|windows|chatgpt|\bai\b/.test(n)) return "computer_help";
+  return null;
+}
+// Buying-intent markers: a service question that ALSO carries one of
+// these is the moment a gentle qualification offer is appropriate. A
+// plain information question carries none and is never followed by one.
+function hasServiceIntent(normText) {
+  return /\b(price|prices|pricing|cost|costs|much|quote|book|booking|start|started|starting|sign up|hire|need|needs|want|wants|get|getting)\b/.test(normText);
+}
+// The compact one-line qualification summary that rides along with a
+// lead, e.g. "Qualified: Bookkeeping · business · this month ·
+// prefers text · about 6 months of records".
+function qualSummaryText(d) {
+  const q = (d && d.qual) || {};
+  const parts = [];
+  const label = (d && (d.qualLabel || d.service)) || "";
+  if (label) parts.push(label);
+  if (q.biz) parts.push(q.biz);
+  if (q.timeline) parts.push(q.timeline);
+  if (q.contact) parts.push("prefers " + q.contact);
+  if (q.specific) parts.push(q.specific);
+  if (!parts.length) return "";
+  const extras = [q.biz, q.timeline, q.contact, q.specific].filter(Boolean).length;
+  return "Qualified: " + parts.join(" · ") + (extras ? "" : " (no extra details given)");
+}
+
 // Parse an explicit clock reference like "9pm", "21:00" from the text.
 function parseClockRef(normText) {
   const m = normText.match(/\b(\d{1,2})\s*(pm|am)\b/);
@@ -344,7 +419,7 @@ function classify(session, rawText, opts) {
       if (ref !== null || mentionsNow) {
         const hour = ref !== null ? ref : now.getHours() + now.getMinutes() / 60;
         const day = now.getDay();
-        if (!isOpenAt(day === 0 ? 1 : day, hour)) {
+        if (!isOpenAt(day, hour)) {
           return success({ intent: "hours", flow: "flow-5-after-hours",
             answer: "We're closed at that time — our hours are " + HOURS_TEXT + ". " + HOLIDAY_NOTE + " You can leave a booking request here anytime and Jaeger will confirm when we reopen, or call/text " + PHONE_TEXT + " during hours. Tap “Book” to start." });
         }
@@ -386,7 +461,8 @@ function greetingFor(now) {
   const log = document.getElementById("chat-log");
   const input = document.getElementById("chat-input");
   const session = createSession();
-  let mode = null; // {kind:'book', step, data, stage, editKey}
+  let mode = null; // {kind:'book'|'qualify', step, data, stage, editKey, plan, qidx}
+  let pendingOffer = null; // service intent whose qualify offer awaits a yes/no
 
   document.getElementById("chat-btn").addEventListener("click", () => {
     panel.classList.toggle("open");
@@ -460,6 +536,80 @@ function greetingFor(now) {
     addBotLink("Contact form: ", FORM_URL, "Send a message via our contact form");
   }
 
+  // ---- Auto-qualification flows ----
+  // The standalone qualify flow (entered from the offer after a
+  // service-intent question) and the in-booking qualifiers share this
+  // runner. Every question is skippable ("skip"), all of them can be
+  // dropped at once ("just book" / "skip all"), and escape always works.
+  function startQualify(intent) {
+    pendingOffer = null;
+    mode = { kind: "qualify", stage: "q", plan: qualifyPlan(intent), qidx: 0,
+             data: { qual: {}, qualLabel: SERVICE_LABELS[intent], service: SERVICE_LABELS[intent] } };
+    addBot("Great — these are quick, and every one is optional. Say “skip” for any you'd rather not answer, or “cancel” to stop altogether.");
+    addBot(mode.plan[0].prompt);
+  }
+
+  // Inside the booking flow, once the service is known: slip the gentle
+  // qualifiers in before the day/time step, then resume the capture.
+  function beginQualifiers() {
+    mode.serviceIntent = serviceIntentForText(mode.data.service);
+    mode.data.qualLabel = mode.serviceIntent ? SERVICE_LABELS[mode.serviceIntent] : mode.data.service;
+    mode.plan = qualifyPlan(mode.serviceIntent);
+    mode.qidx = 0;
+    mode.stage = "bqual";
+    addBot("A few quick details help Jaeger give you an exact quote — every one is optional. Say “skip” for any of them, or “just book” to skip them all.");
+    addBot(mode.plan[0].prompt);
+  }
+
+  function qualifyInput(text) {
+    if (isEscape(text)) { escapeFlow(); return; }
+    const n = normalize(text);
+    if (n.includes("just book") || n.includes("skip all") || n === "skip everything") { finishQualifiers(); return; }
+    if (["skip", "skip this", "pass", "next", "no answer", "rather not say"].includes(n)) { advanceQual(); return; }
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. " + mode.plan[mode.qidx].prompt + " Or say “skip”, or “cancel” to stop.");
+      return;
+    }
+    mode.data.qual[mode.plan[mode.qidx].key] = text;
+    advanceQual();
+  }
+
+  function advanceQual() {
+    mode.qidx += 1;
+    if (mode.qidx < mode.plan.length) { addBot(mode.plan[mode.qidx].prompt); return; }
+    finishQualifiers();
+  }
+
+  function finishQualifiers() {
+    if (mode.kind === "book") {
+      mode.stage = "capture"; mode.step = 3;
+      askField(BOOK_FIELDS[3]); // resume at the day/time step
+      return;
+    }
+    const d = mode.data; mode = null;
+    addBot("Thank you — here's the note for Jaeger: " + qualSummaryText(d) + ".");
+    addBot("One honest step left: this chat runs in your browser and can't send messages by itself, so nothing has been sent or stored yet. Tap the form link below and paste that note into the message box — the form only asks for your name, email, and a message — or call or text Jaeger at " + PHONE_TEXT + ".");
+    addBotLink("Contact form: ", FORM_URL, "Send it via our contact form");
+    addBot("Nothing is booked until Jaeger gets back to you to confirm. Anything else I can help with?");
+  }
+
+  // The offer itself: shown ONCE, after a service answer that carried
+  // buying intent — never after a plain information question, and never
+  // instead of the answer.
+  const QUALIFY_OFFER = "Want me to pass this to Jaeger with a couple of quick details so he can give you an exact quote? Say “yes” and I'll ask them — or just keep asking questions here; nothing changes either way.";
+  function maybeOfferQualify(r, rawText) {
+    if (r.flow !== "flow-3-faq" || !SERVICE_LABELS[r.intent]) return;
+    if (!hasServiceIntent(normalize(rawText))) return;
+    pendingOffer = r.intent;
+    addBot(QUALIFY_OFFER);
+  }
+  function isYesReply(n) {
+    return ["yes", "yeah", "yep", "sure", "ok", "okay", "yes please", "please", "sounds good"].includes(n) || n.startsWith("yes");
+  }
+  function isNoReply(n) {
+    return ["no", "nope", "no thanks", "no thank you", "not now", "not really"].includes(n) || n.startsWith("no ");
+  }
+
   // A question typed mid-capture is not an answer — don't store it.
   function looksLikeQuestion(text) {
     const t = (text || "").trim();
@@ -467,13 +617,17 @@ function greetingFor(now) {
   }
 
   function startFlow(kind) {
-    mode = { kind, step: 0, data: {}, stage: "capture", editKey: null };
+    pendingOffer = null;
+    mode = { kind, step: 0, data: { qual: {} }, stage: "capture", editKey: null };
     addBot("I can take a booking request for a free intro call — Jaeger calls you back to confirm, and nothing is booked until he does.");
     askField(BOOK_FIELDS[0]);
   }
 
   function summaryText(d) {
-    return d.name + ", " + d.phone + ", about: " + d.service + ", preferring " + d.when + ", " + d.status + " client";
+    let s = d.name + ", " + d.phone + ", about: " + d.service + ", preferring " + d.when + ", " + d.status + " client";
+    const q = qualSummaryText(d);
+    if (q) s += ". " + q;
+    return s;
   }
 
   // Confirm/edit step: the visitor can fix ONE detail instead of starting
@@ -560,6 +714,7 @@ function greetingFor(now) {
   }
 
   function flowInput(text) {
+    if (mode.stage === "bqual" || mode.stage === "q") { qualifyInput(text); return; }
     if (mode.stage === "confirm") { confirmInput(text); return; }
     if (mode.stage === "which") { whichInput(text); return; }
     if (mode.stage === "edit") { editInput(text); return; }
@@ -575,6 +730,7 @@ function greetingFor(now) {
       if (verdict !== true) { addBot(verdict); return; }
     }
     mode.data[field.key] = text;
+    if (field.key === "service") { beginQualifiers(); return; }
     mode.step += 1;
     if (mode.step < BOOK_FIELDS.length) { askField(BOOK_FIELDS[mode.step]); return; }
     showSummary();
@@ -598,9 +754,20 @@ function greetingFor(now) {
     const q = input.value.trim(); if (!q) return;
     addUser(q); input.value = "";
     if (mode) { flowInput(q); return; }
+    if (pendingOffer) {
+      const n = normalize(q);
+      if (isYesReply(n)) { startQualify(pendingOffer); return; }
+      if (isNoReply(n)) {
+        pendingOffer = null;
+        addBot("No problem at all — we'll leave it there. Ask me anything else you'd like to know.");
+        return;
+      }
+      pendingOffer = null; // a new question supersedes the offer
+    }
     const r = classify(session, q, {});
     addBot(r.answer);
     if (r.flow === "flow-2-booking-request") startFlow("book");
+    else maybeOfferQualify(r, q);
   });
 })();
 </script>
