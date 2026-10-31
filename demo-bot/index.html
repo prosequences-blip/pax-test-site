@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bright Smile Dental — Demo Chatbot by Prosequences</title>
+<style>
+  :root { --ink:#17323f; --teal:#0e7c86; --teal-dark:#0a5a62; --paper:#f6f9fa; --line:#d8e4e8; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: var(--paper); color: var(--ink); }
+  main { max-width: 720px; margin: 0 auto; padding: 2.2rem 1.2rem 7rem; }
+  h1 { font-size: 1.7rem; margin: 0 0 .3rem; }
+  .sub { color: #47626e; margin: 0 0 1.2rem; }
+  .card { background:#fff; border:1px solid var(--line); border-radius: 12px; padding: 1rem 1.2rem; }
+  .card h2 { font-size: 1.05rem; margin: .2rem 0 .5rem; }
+  .card p, .card li { line-height: 1.45; }
+  footer { max-width: 720px; margin: 0 auto; padding: 0 1.2rem 2rem; color:#6b828d; font-size:.85rem; }
+  #chat-btn { position: fixed; right: 20px; bottom: 20px; padding: 13px 20px; border: 0; border-radius: 999px; background: var(--teal); color: #fff; font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+  #chat-btn:hover { background: var(--teal-dark); }
+  #chat-panel { display: none; position: fixed; right: 20px; bottom: 78px; width: 360px; max-width: 92vw; height: 520px; max-height: 78vh; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.25); flex-direction: column; overflow: hidden; }
+  #chat-panel.open { display: flex; }
+  #chat-head { background: var(--teal); color:#fff; padding: 10px 14px; font-weight: 600; }
+  #chat-head small { display:block; font-weight: 400; opacity:.85; }
+  #chat-log { flex: 1; overflow-y: auto; padding: 12px; background: #fbfdfd; }
+  #chat-log p { margin: .45em 0; line-height: 1.4; max-width: 92%; }
+  .bot { color: var(--ink); }
+  .bot .bubble { background:#eef5f6; border:1px solid var(--line); border-radius: 10px; padding: 7px 10px; display: inline-block; }
+  .user { text-align: right; }
+  .user .bubble { background: var(--teal); color:#fff; border-radius: 10px; padding: 7px 10px; display: inline-block; text-align: left; }
+  #chat-menu { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-top: 1px solid #eef3f4; }
+  #chat-menu button { border: 1px solid var(--teal); color: var(--teal-dark); background: #fff; border-radius: 999px; padding: 5px 11px; cursor: pointer; font-size: .85rem; }
+  #chat-menu button:hover { background: #eef5f6; }
+  #chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
+  #chat-input { flex: 1; padding: 9px; border: 1px solid var(--line); border-radius: 8px; font-size: .95rem; }
+  #chat-form button { background: var(--teal); color:#fff; border:0; border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bright Smile Dental</h1>
+  <p class="sub">A fictional dental practice — this page exists to demonstrate a small-business chatbot.</p>
+  <div class="card">
+    <h2>Try the chat (bottom-right)</h2>
+    <p>Ask it about hours, prices, insurance, or booking — or try something it can't answer and watch how it hands you to a human. Everything runs in your browser: no server, no account, nothing you type leaves this page.</p>
+    <ul>
+      <li>20 built-in FAQs (hours, prices, insurance, first visit, emergencies…)</li>
+      <li>Booking-request flow that captures a callback lead — nothing is “booked” until staff confirm</li>
+      <li>Insurance check, after-hours mode, and a two-miss rule that offers a human</li>
+    </ul>
+  </div>
+</main>
+<footer>Demo — Bright Smile Dental is fictional and all prices/details are sample values. Chatbot built by Prosequences (Jaeger + Pax, an AI production team). Self-contained: the whole bot is this one HTML file.</footer>
+
+<button id="chat-btn" type="button">Chat with us</button>
+<div id="chat-panel" role="dialog" aria-label="Chat panel">
+  <div id="chat-head">Bright Smile Dental <small>Demo assistant — replies instantly</small></div>
+  <div id="chat-log"></div>
+  <div id="chat-menu">
+    <button type="button" data-act="book">Book</button>
+    <button type="button" data-act="hours">Hours &amp; location</button>
+    <button type="button" data-act="services">Services &amp; prices</button>
+    <button type="button" data-act="insurance">Insurance</button>
+    <button type="button" data-act="human">Talk to a human</button>
+  </div>
+  <form id="chat-form">
+    <input id="chat-input" type="text" placeholder="Type a question…" autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+// === BOT CORE START ===
+// Pure conversation logic for the Bright Smile Dental demo bot.
+// This exact block is extracted and run by test_matcher.js against
+// test-utterances.json, so the live page and the test use identical code.
+"use strict";
+
+const FAQS = [
+  { intent: "hours", utterances: ["What are your hours?", "When are you open?", "Are you open Saturday?"],
+    answer: "We're open Mon–Fri 8am–5pm and Sat 9am–1pm. We're closed Sundays." },
+  { intent: "location_parking", utterances: ["Where are you located?", "Is there parking?", "What's your address?"],
+    answer: "We're at 123 Main St (fictional demo address). There's a free parking lot behind the building." },
+  { intent: "new_patient_special", utterances: ["Do you have a new patient special?", "Any deals for new patients?"],
+    answer: "Yes — our new-patient special is $99 for an exam + cleaning (fictional demo pricing)." },
+  { intent: "booking_how", utterances: ["How do I book an appointment?", "Can I schedule a visit?"],
+    answer: "I can take a booking request right here: your name, phone, preferred day/time, and whether you're a new or existing patient. Staff will call back to confirm — nothing is final until they do." },
+  { intent: "reschedule", utterances: ["How do I reschedule?", "I need to move my appointment"],
+    answer: "No problem — tell me your name and preferred new day/time and staff will call to confirm the change. You can also call the office during hours." },
+  { intent: "cancellation_policy", utterances: ["What's your cancellation policy?", "Is there a fee if I cancel?"],
+    answer: "Please give 24 hours' notice to cancel. There's no fee the first time." },
+  { intent: "services_overview", utterances: ["What services do you offer?", "What do you do there?"],
+    answer: "We offer cleanings, exams, fillings, crowns, whitening, Invisalign consults, and general family dentistry. Want details on any of those?" },
+  { intent: "cleaning_price", utterances: ["How much is a cleaning?", "Price for a checkup?"],
+    answer: "A routine cleaning/exam is typically in the $99–$180 range for this demo; the dentist confirms the exact cost at your visit." },
+  { intent: "whitening", utterances: ["How much is teeth whitening?", "Do you do whitening?"],
+    answer: "Yes, we offer whitening, typically $250–$450. The dentist confirms the exact price after a quick check of your teeth." },
+  { intent: "fillings_crowns", utterances: ["Do you do fillings or crowns?", "How much is a crown?"],
+    answer: "Yes, we do fillings and crowns. Prices vary by tooth and material, so we give ranges in-office and the dentist confirms before any work starts." },
+  { intent: "braces_invisalign", utterances: ["Do you offer braces or Invisalign?", "Can I get Invisalign?"],
+    answer: "We offer Invisalign consults. Book a consult and the dentist will check if it's right for you and confirm pricing." },
+  { intent: "kids", utterances: ["Do you see kids?", "What age do children start?"],
+    answer: "Yes — we welcome kids from age 3 and up." },
+  { intent: "insurance_general", utterances: ["Do you take insurance?", "Which insurance do you accept?"],
+    answer: "We bill many major insurers. Tell me your insurer's name and I can check our demo list; staff will verify your coverage before your visit." },
+  { intent: "delta_dental", utterances: ["Do you take Delta Dental?", "Is Delta Dental accepted?"],
+    answer: "Yes, Delta Dental is on our accepted list for this demo. Staff will still verify your specific plan before your visit." },
+  { intent: "out_of_network", utterances: ["What if you're out of network?", "My insurance isn't listed"],
+    answer: "If we're out-of-network for your plan, we can still see you — staff will explain likely costs and verify benefits before you book." },
+  { intent: "payment_plans", utterances: ["Do you offer payment plans?", "Can I pay in instalments?"],
+    answer: "Yes, payment plans are available. Staff will explain the options — I can't quote plan terms in chat." },
+  { intent: "payment_methods", utterances: ["What payment methods do you accept?", "Do you take cards?"],
+    answer: "We accept major cards and common payment methods; staff can confirm specifics when they call back." },
+  { intent: "xrays_safety", utterances: ["Are dental X-rays safe?", "Do I need X-rays?"],
+    answer: "Dental X-rays use low radiation and are a standard part of care — that's general information only. Whether you need them is a question for the dentist, not something I can decide in chat." },
+  { intent: "first_visit", utterances: ["What happens at my first visit?", "What should I bring?"],
+    answer: "Your first visit is usually an exam, cleaning, and any needed X-rays. Bring your insurance card (if you have one) and arrive a few minutes early for intake forms." },
+  { intent: "emergency", utterances: ["I have severe tooth pain and swelling", "I broke a tooth", "Dental emergency"],
+    answer: "That sounds urgent — please call the office right away, or urgent care, and call 911 if it's severe (swelling, fever, or trauma). I'm alerting staff now, but please don't wait on chat for an emergency." }
+];
+
+const INTENT_KEYWORDS = {
+  hours: ["hours", "open", "closed", "close", "when", "saturday", "sunday", "monday", "weekend", "now", "tonight", "today"],
+  location_parking: ["where", "located", "location", "address", "parking", "park", "directions", "find", "street"],
+  new_patient_special: ["new", "patient", "special", "deal", "deals", "offer", "discount"],
+  booking_how: ["book", "booking", "schedule", "appointment", "visit", "reserve"],
+  reschedule: ["reschedule", "move", "change", "postpone"],
+  cancellation_policy: ["cancel", "cancellation", "policy", "fee", "notice"],
+  services_overview: ["services", "offer", "provide", "treatments", "there"],
+  cleaning_price: ["cleaning", "clean", "checkup", "exam", "price", "cost", "much"],
+  whitening: ["whitening", "whiten", "brighten"],
+  fillings_crowns: ["filling", "fillings", "crown", "crowns", "cap"],
+  braces_invisalign: ["braces", "invisalign", "orthodontic", "straighten"],
+  kids: ["kids", "kid", "children", "child", "age", "pediatric", "son", "daughter"],
+  insurance_general: ["insurance", "insured", "coverage", "accept", "take", "plans", "plan"],
+  delta_dental: ["delta"],
+  out_of_network: ["network", "listed"],
+  payment_plans: ["payment", "plans", "instalments", "installments", "finance", "financing", "monthly"],
+  payment_methods: ["payment", "methods", "cards", "card", "cash", "visa", "mastercard"],
+  xrays_safety: ["xrays", "xray", "radiation", "safe", "safety"],
+  first_visit: ["first", "visit", "bring", "expect", "happens"],
+  emergency: ["emergency", "pain", "swelling", "swollen", "broke", "broken", "hurt", "hurts"]
+};
+
+const STOPWORDS = new Set(("a an the is are do does did you your yours we our i me my it its of to for in on at and or if so be can could would should what whats when where which who how much many any is are was were have has had will would there here this that with from by about into over under again further then once").split(" "));
+
+const NAMED_INSURERS = ["aetna", "cigna", "metlife", "guardian", "humana", "anthem", "principal", "ameritas", "unitedhealthcare", "uhc", "bluecross", "caresource", "geha"];
+
+const HOURS_TEXT = "Mon–Fri 8am–5pm and Sat 9am–1pm (closed Sundays)";
+const FALLBACK_ANSWER = "I don't want to guess at that one. I can take your name and phone number and have a real person from the office call you back — just tap “Talk to a human” below. Or try asking about hours, prices, insurance, or booking.";
+const HANDOFF_OFFER = "Let me get a person involved so you're not stuck with me. Tap “Talk to a human” and leave your name and number — a staff member will call you back. If it's urgent, please call the office during opening hours (" + HOURS_TEXT + ").";
+const HANDOFF_ANSWER = "Of course — I've flagged this for the team. Leave your name and phone number here and a staff member will call you back. If it's urgent, please call the office during opening hours (" + HOURS_TEXT + ").";
+const MEDICAL_ANSWER = "I can't diagnose anything in chat — that's a question for the dentist. I can take your details and have the office call you, or help you request an exam so the dentist can look in person. Tap “Talk to a human” or “Book” to start.";
+const INSURANCE_CHECK_ANSWER = "We bill many major insurers, so there's a good chance we work with yours — staff will verify your specific plan before your visit and explain any costs. Want me to take your name and number for a verification callback? Tap “Talk to a human”.";
+
+function normalize(text) {
+  let t = (text || "").toLowerCase().replace(/’/g, "'").replace(/‘/g, "'");
+  t = t.replace(/\bwhat's\b/g, "what is").replace(/\bcan't\b/g, "cannot")
+       .replace(/\bdon't\b/g, "do not").replace(/\byou're\b/g, "you are")
+       .replace(/\bi'm\b/g, "i am").replace(/\bisn't\b/g, "is not")
+       .replace(/\bx-rays\b/g, "xrays").replace(/\bx-ray\b/g, "xrays")
+       .replace(/\bblue cross\b/g, "bluecross");
+  t = t.replace(/[^a-z0-9\s]/g, " ");
+  return t.replace(/\s+/g, " ").trim();
+}
+
+function tokens(text) { return normalize(text).split(" ").filter(Boolean); }
+function contentTokens(text) { return tokens(text).filter(w => !STOPWORDS.has(w)); }
+
+const FAQ_BY_INTENT = {};
+for (const f of FAQS) FAQ_BY_INTENT[f.intent] = f;
+
+// Office hours: Mon–Fri 8–17, Sat 9–13, Sun closed. day: 0=Sun..6=Sat.
+function isOpenAt(day, hourFloat) {
+  if (day === 0) return false;
+  if (day === 6) return hourFloat >= 9 && hourFloat < 13;
+  return hourFloat >= 8 && hourFloat < 17;
+}
+
+// Parse an explicit clock reference like "9pm", "at 9", "21:00" from the text.
+function parseClockRef(normText) {
+  const m = normText.match(/\b(\d{1,2})\s*(pm|am)\b/);
+  if (m) { let h = parseInt(m[1], 10) % 12; if (m[2] === "pm") h += 12; return h; }
+  const m2 = normText.match(/\b(2[0-3]|[01]?\d):([0-5]\d)\b/);
+  if (m2) return parseInt(m2[1], 10) + parseInt(m2[2], 10) / 60;
+  return null;
+}
+
+function createSession() { return { misses: 0 }; }
+
+function faqResult(intent, flow) {
+  return { intent, flow: flow || "flow-3-faq", answer: FAQ_BY_INTENT[intent].answer };
+}
+
+function classify(session, rawText, opts) {
+  opts = opts || {};
+  const now = opts.now || new Date();
+  const norm = normalize(rawText);
+  const toks = tokens(rawText);
+  const has = w => toks.includes(w);
+  const hasAny = ws => ws.some(w => toks.includes(w));
+
+  const success = r => { session.misses = 0; return r; };
+
+  // 1. Emergencies first — always a human, never a sales flow.
+  const emergency =
+    has("emergency") || has("swollen") || has("swelling") ||
+    ((has("broke") || has("broken")) && has("tooth")) ||
+    (hasAny(["pain", "hurts", "hurt"]) && hasAny(["severe", "swelling", "swollen", "bad"])) ||
+    (has("fever") && hasAny(["tooth", "pain", "swollen", "swelling"]));
+  if (emergency) return success(faqResult("emergency", "flow-6-human-handoff"));
+
+  // 2. Medical questions -> dentist, via handoff.
+  if (hasAny(["diagnose", "diagnosis", "lump"]) || norm.includes("what is this spot")) {
+    return success({ intent: "medical_question", flow: "flow-6-human-handoff", answer: MEDICAL_ANSWER });
+  }
+
+  // 3. Explicit human / complaint / billing dispute -> handoff.
+  if (hasAny(["human", "complaint", "manager", "representative"]) ||
+      norm.includes("real person") || norm.includes("someone real") ||
+      norm.includes("bill is wrong") || norm.includes("billing dispute")) {
+    return success({ intent: "handoff", flow: "flow-6-human-handoff", answer: HANDOFF_ANSWER });
+  }
+
+  // 4. Exact utterance match.
+  for (const f of FAQS) {
+    for (const u of f.utterances) {
+      if (normalize(u) === norm) return success(faqResult(f.intent));
+    }
+  }
+
+  // 5. Named non-Delta insurer -> insurance-check flow (staff verification).
+  if (!has("delta") && hasAny(NAMED_INSURERS) && hasAny(["take", "accept", "insurance", "cover", "covered", "bill"])) {
+    return success({ intent: "insurance_general", flow: "flow-4-insurance-check", answer: INSURANCE_CHECK_ANSWER });
+  }
+
+  // 6. Keyword scoring across FAQ intents. Distinctive words (a service or
+  // topic noun that belongs to essentially one FAQ) count double, so a single
+  // clear topic word is enough to match.
+  const DISTINCTIVE = new Set(["whitening", "crown", "crowns", "filling", "fillings", "parking", "park",
+    "kid", "kids", "children", "card", "cards", "cancel", "cancellation", "reschedule",
+    "invisalign", "braces", "xrays", "delta", "cleaning", "checkup", "close", "closed"]);
+  const inputTokens = new Set(toks);
+  let best = null, bestScore = 0;
+  for (const f of FAQS) {
+    const keys = new Set(INTENT_KEYWORDS[f.intent] || []);
+    for (const u of f.utterances) for (const w of contentTokens(u)) keys.add(w);
+    let score = 0;
+    for (const w of inputTokens) {
+      const stem = (w.length > 4 && w.endsWith("s") && !w.endsWith("ss")) ? w.slice(0, -1) : w;
+      if (keys.has(w) || keys.has(stem)) score += (DISTINCTIVE.has(w) || DISTINCTIVE.has(stem)) ? 2 : 1;
+    }
+    // "cancel" said outright means the cancellation policy unless they also
+    // asked to move/change (that's reschedule).
+    if (f.intent === "cancellation_policy" && has("cancel") && !hasAny(["reschedule", "move", "change", "postpone"])) score += 2;
+    // Phrases that strongly imply an intent.
+    if (f.intent === "booking_how" && (norm.includes("book me") || norm.includes("schedule me"))) score += 3;
+    if (score > bestScore) { bestScore = score; best = f; }
+  }
+
+  if (best && bestScore >= 2) {
+    const intent = best.intent;
+    // Booking *action* (not a how-question) -> booking-request flow.
+    const dayRef = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today)\b/.test(norm);
+    if (intent === "booking_how" &&
+        (norm.includes("book me") || norm.includes("schedule me") || dayRef || hasAny(["morning", "afternoon", "evening"]))) {
+      return success({ intent, flow: "flow-2-booking-request", answer: FAQ_BY_INTENT.booking_how.answer });
+    }
+    // Reschedule *action* naming an appointment/day -> booking-request flow.
+    if (intent === "reschedule" && (dayRef || norm.includes("move my") || has("need"))) {
+      return success({ intent, flow: "flow-2-booking-request", answer: FAQ_BY_INTENT.reschedule.answer });
+    }
+    // Hours asked about a specific time (or "right now") -> after-hours check.
+    if (intent === "hours") {
+      const ref = parseClockRef(norm);
+      const mentionsNow = norm.includes("right now") || norm.includes("tonight") || norm.includes("open now");
+      if (ref !== null || mentionsNow) {
+        const hour = ref !== null ? ref : now.getHours() + now.getMinutes() / 60;
+        const day = ref !== null ? now.getDay() : now.getDay();
+        if (!isOpenAt(day === 0 ? 1 : day, hour)) {
+          return success({ intent: "hours", flow: "flow-5-after-hours",
+            answer: "We're closed at that time — our hours are " + HOURS_TEXT + ". I can still take a booking request now and staff will confirm when we reopen. Tap “Book” to start." });
+        }
+      }
+    }
+    return success(faqResult(intent));
+  }
+
+  // 6b. "Do you do/offer <something unlisted>?" -> answer with the services
+  // overview rather than a dead-end fallback.
+  if (/\bdo you (do|offer|provide)\b/.test(norm) || norm.includes("what services")) {
+    return success(faqResult("services_overview"));
+  }
+
+  // 7. Fallback — second consecutive miss escalates to a human offer.
+  session.misses += 1;
+  if (session.misses >= 2) {
+    return { intent: "fallback-2", flow: "flow-6-human-handoff", answer: HANDOFF_OFFER };
+  }
+  return { intent: "fallback", flow: "flow-3-faq", answer: FALLBACK_ANSWER };
+}
+
+function greetingFor(now) {
+  const open = isOpenAt(now.getDay(), now.getHours() + now.getMinutes() / 60);
+  return open
+    ? "Hi, this is Bright Smile Dental's assistant. We're open now — hours are " + HOURS_TEXT + ". Ask me a question, or tap a topic below."
+    : "Hi, this is Bright Smile Dental's assistant. The office is currently closed — our hours are " + HOURS_TEXT + ". I can still take a booking request, and staff will confirm when we reopen. Ask me a question, or tap a topic below.";
+}
+// === BOT CORE END ===
+</script>
+
+<script>
+// === PAGE WIRING (not part of the tested core) ===
+(function () {
+  const panel = document.getElementById("chat-panel");
+  const log = document.getElementById("chat-log");
+  const input = document.getElementById("chat-input");
+  const session = createSession();
+  let mode = null; // {kind:'book'|'callback', step, data}
+
+  document.getElementById("chat-btn").addEventListener("click", () => {
+    panel.classList.toggle("open");
+    if (panel.classList.contains("open") && !log.dataset.greeted) {
+      log.dataset.greeted = "1";
+      addBot(greetingFor(new Date()));
+    }
+  });
+
+  function addLine(cls, text) {
+    const p = document.createElement("p"); p.className = cls;
+    const b = document.createElement("span"); b.className = "bubble"; b.textContent = text;
+    p.appendChild(b); log.appendChild(p); log.scrollTop = log.scrollHeight;
+  }
+  function addBot(t) { addLine("bot", t); }
+  function addUser(t) { addLine("user", t); }
+
+  const BOOK_FIELDS = [
+    { key: "name", prompt: "Sure — what's your name?" },
+    { key: "phone", prompt: "Thanks. What's the best phone number for the office to call back?", validate: v => (v.replace(/\D/g, "").length >= 7) || "That doesn't look like a full phone number — could you re-enter it?" },
+    { key: "when", prompt: "What day and time would you prefer?" },
+    { key: "status", prompt: "Are you a new or existing patient?" },
+    { key: "reason", prompt: "Last one: what's the visit for — cleaning, checkup, or something else?" }
+  ];
+
+  function startFlow(kind) {
+    mode = { kind, step: 0, data: {} };
+    addBot(kind === "book"
+      ? "I can take a booking request — staff will call to confirm, and nothing is final until they do. " + BOOK_FIELDS[0].prompt
+      : "Of course. What's your name?");
+  }
+
+  function flowInput(text) {
+    const fields = mode.kind === "book" ? BOOK_FIELDS
+      : [ { key: "name", prompt: "" }, { key: "phone", prompt: "And the best phone number to reach you?" } ];
+    const field = fields[mode.step];
+    if (field.validate) {
+      const verdict = field.validate(text);
+      if (verdict !== true) { addBot(verdict); return; }
+    }
+    mode.data[field.key] = text;
+    mode.step += 1;
+    if (mode.step < fields.length) { addBot(fields[mode.step].prompt); return; }
+    const d = mode.data; const kind = mode.kind; mode = null;
+    if (kind === "book") {
+      addBot("Here's your request: " + d.name + ", " + d.phone + ", preferring " + d.when + ", " + d.status + " patient, for: " + d.reason + ". (Demo only — nothing was sent anywhere.) Staff would call " + d.phone + " to confirm. Anything else I can help with?");
+    } else {
+      addBot("Thanks, " + d.name + " — I've noted " + d.phone + " for a callback. (Demo only — nothing was sent anywhere.) A staff member would follow up from here. Anything else?");
+    }
+  }
+
+  function handleMenu(act) {
+    if (act === "book") { startFlow("book"); return; }
+    if (act === "human") { addBot(HANDOFF_ANSWER); startFlow("callback"); return; }
+    if (act === "hours") { addBot(FAQ_BY_INTENT.hours.answer + " " + FAQ_BY_INTENT.location_parking.answer); return; }
+    if (act === "services") { addBot(FAQ_BY_INTENT.services_overview.answer); return; }
+    if (act === "insurance") { addBot("Which insurer are you with? Type the name (for example Delta Dental or Aetna) and I'll check our demo list."); mode = { kind: "insurer", step: 0, data: {} }; return; }
+  }
+
+  document.getElementById("chat-menu").addEventListener("click", ev => {
+    const btn = ev.target.closest("button[data-act]");
+    if (btn) handleMenu(btn.dataset.act);
+  });
+
+  document.getElementById("chat-form").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const q = input.value.trim(); if (!q) return;
+    addUser(q); input.value = "";
+    if (mode && (mode.kind === "book" || mode.kind === "callback")) { flowInput(q); return; }
+    if (mode && mode.kind === "insurer") {
+      mode = null;
+      const norm = normalize(q);
+      if (norm.includes("delta")) { addBot(FAQ_BY_INTENT.delta_dental.answer); return; }
+      if (NAMED_INSURERS.some(n => norm.includes(n))) { addBot(INSURANCE_CHECK_ANSWER); return; }
+      addBot(FAQ_BY_INTENT.out_of_network.answer); return;
+    }
+    const r = classify(session, q, {});
+    addBot(r.answer);
+    if (r.flow === "flow-2-booking-request") startFlow("book");
+    if (r.flow === "flow-6-human-handoff" && r.intent === "handoff") startFlow("callback");
+  });
+})();
+</script>
+</body>
+</html>
