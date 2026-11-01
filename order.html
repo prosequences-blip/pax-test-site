@@ -76,6 +76,18 @@
     overflow:hidden; margin-top:14px;
   }
   .formbox iframe{display:block; width:100%; height:820px; border:0; background:#fff;}
+  .trackbox{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:16px 18px; margin-top:14px; display:flex; align-items:center;
+    justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .trackbox p{color:var(--muted); font-size:13.5px; line-height:1.55; max-width:720px;}
+  .trackbtn{
+    background:linear-gradient(135deg,var(--accent),#e07b39); color:#23150a;
+    text-decoration:none; font-weight:750; padding:10px 16px;
+    border-radius:999px; white-space:nowrap;
+  }
+  .trackbtn:hover{filter:brightness(1.06);}
   footer{text-align:center; color:var(--muted); font-size:12.5px; margin-top:30px; line-height:1.6;}
 </style>
 </head>
@@ -117,6 +129,12 @@
       <h3>We place your order</h3>
       <p>Within <b>one business day</b> of your payment landing, we place the order with our printer using the address you gave us, and email you confirmation and tracking. If we can't fulfil your order for any reason, we <b>refund in full through the same app</b> you paid with.</p>
     </div>
+  </div>
+
+  <h2>Track your package</h2>
+  <div class="trackbox">
+    <p>When your order ships, we email you its tracking number. Already have your tracking number from us? Paste it on 17track to see your package's journey — 17track brings all major carriers together in one place.</p>
+    <a class="trackbtn" href="https://www.17track.net/en" target="_blank" rel="noopener">Track on 17track</a>
   </div>
 
   <h2>The order form</h2>
