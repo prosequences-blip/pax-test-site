@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circle City — Prosequences 3D Vision</title>
+<meta name="description" content="Circle City: the Prosequences vision in interactive 3D — eight kin's-domain homesteads arranged as a Wellness Wheel, ringed by living hedges, permaculture gardens, and a cedar forest.">
+<link rel="canonical" href="https://prosequencesllc.com/circle-city/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Prosequences">
+<meta property="og:title" content="Circle City — Prosequences 3D Vision">
+<meta property="og:description" content="A circular city of kin's-domain homesteads shaped like the eight-spoked Wellness Wheel — drag to explore it in 3D.">
+<meta property="og:url" content="https://prosequencesllc.com/circle-city/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Circle City — Prosequences 3D Vision">
+<meta name="twitter:description" content="A circular city of kin's-domain homesteads shaped like the eight-spoked Wellness Wheel — drag to explore it in 3D.">
+<style>
+  :root{
+    --cream:#FDF8E8; --paper:#FFFDF4; --ink:#121F2F; --muted:#5A6B7A;
+    --teal:#0C3D4B; --green:#24402F; --olive:#697D39; --gold:#E5A93D;
+    --line:rgba(18,31,47,.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--cream); color:var(--ink); min-height:100vh; padding:26px 16px 40px;
+  }
+  .wrap{max-width:880px; margin:0 auto;}
+  .back{display:inline-block; color:var(--teal); text-decoration:none; font-size:14px; font-weight:600; margin-bottom:14px;}
+  .back:hover{text-decoration:underline;}
+  header{text-align:center; padding:4px 4px 18px;}
+  h1{font-size:32px; letter-spacing:.4px; color:var(--green);}
+  .tag{color:var(--muted); font-size:15.5px; margin:8px auto 0; line-height:1.5; max-width:620px;}
+  #stage{
+    position:relative; border:1px solid var(--line); border-radius:18px; overflow:hidden;
+    background:var(--cream); box-shadow:0 12px 30px rgba(18,31,47,.10); height:min(68vh,560px);
+  }
+  #stage canvas{display:block; width:100%; height:100%;}
+  #fallback{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:24px; color:var(--muted); font-size:15px; line-height:1.55;
+  }
+  .hint{text-align:center; color:var(--muted); font-size:13px; margin-top:10px;}
+  h2{
+    font-size:13px; text-transform:uppercase; letter-spacing:1.6px;
+    color:var(--teal); margin:26px 2px 12px;
+  }
+  .legend{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:9px; list-style:none;}
+  .legend li{
+    display:flex; align-items:center; gap:9px; background:var(--paper);
+    border:1px solid var(--line); border-radius:12px; padding:9px 12px; font-size:14.5px; font-weight:600;
+  }
+  .dot{width:14px; height:14px; border-radius:50%; flex:0 0 auto; box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);}
+  .story{
+    margin-top:22px; background:var(--paper); border:1px solid var(--line);
+    border-radius:14px; padding:16px 18px; font-size:14.5px; line-height:1.6; color:#33475B;
+  }
+  footer{text-align:center; color:var(--muted); font-size:12.5px; margin-top:26px; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../hub/">‹ All our links</a>
+
+  <header>
+    <h1>🌲 Circle City</h1>
+    <p class="tag">One city, shaped like a wheel of balance: eight kin's-domain homesteads — house, gardens,
+    pond, and cedars, each ringed by a living hedge — around a shared heart, with the cedar forest watching over all of it.</p>
+  </header>
+
+  <div id="stage" role="img" aria-label="Interactive 3D model of Circle City: eight green wedge homesteads around a golden hub, ringed by a cedar forest">
+    <div id="fallback">Growing the city…<br>If the forest doesn't appear, your browser may have WebGL turned off — the vision still lives in the words below.</div>
+  </div>
+  <p class="hint">Drag to rotate · scroll or pinch to zoom · it turns slowly on its own when you leave it be</p>
+
+  <h2>The eight spokes — the Wellness Wheel</h2>
+  <ul class="legend">
+    <li><span class="dot" style="background:#D94F4F"></span>Emotional</li>
+    <li><span class="dot" style="background:#4C9A51"></span>Environmental</li>
+    <li><span class="dot" style="background:#E5A93D"></span>Financial</li>
+    <li><span class="dot" style="background:#E07B39"></span>Intellectual</li>
+    <li><span class="dot" style="background:#2E5F8A"></span>Occupational</li>
+    <li><span class="dot" style="background:#0C8A7B"></span>Physical</li>
+    <li><span class="dot" style="background:#B03A5B"></span>Social</li>
+    <li><span class="dot" style="background:#E88BB0"></span>Spiritual</li>
+  </ul>
+
+  <div class="story">
+    Circle City braids three threads of the Prosequences vision into one shape. The <b>circular city</b> lays
+    community out in rings instead of sprawl. The <b>Wellness Wheel</b> gives it eight spokes — the eight
+    dimensions of a balanced life, one homestead for each. And the <b>Ringing Cedars</b> kin's-domain idea
+    fills every spoke: a family's own plot of land, a living hedge for a fence, gardens laid out by
+    permaculture rings, a pond, and cedar trees — land that feeds the people who tend it. Interactive
+    districts are coming soon; for now, walk around it with your fingers.
+  </div>
+
+  <footer>
+    Prosequences · Hillsboro, Oregon<br>
+    Circle City is a living sketch of the vision — it grows in the background.
+  </footer>
+
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ---------- palette (from the Prosequences flow art) ---------- */
+const C = {
+  cream: 0xFDF8E8, paper: 0xF3E9CF, navy: 0x121F2F, teal: 0x0C3D4B,
+  deepGreen: 0x24402F, hedge: 0x2F5D33, olive: 0x697D39, gold: 0xE5A93D,
+  orange: 0xE07B39, baseGreen: 0x5C8A44, meadow: 0x8FBC6B, forestFloor: 0x4E7A3A,
+  road: 0xEFE3C2, pond: 0x57B7D9, pondDeep: 0x3E8FBF, wall: 0xFBF3DC, trunk: 0x6B4A2B
+};
+const CROPS = [0xE5A93D, 0x697D39, 0xC96F2E, 0x7FB069, 0xB5533C, 0x88A93E];
+const GEMS  = [0xD94F4F, 0x4C9A51, 0xE5A93D, 0xE07B39, 0x2E5F8A, 0x0C8A7B, 0xB03A5B, 0xE88BB0];
+
+/* ---------- layout constants ---------- */
+const HUB_R = 12, ROAD1_IN = 12, ROAD1_OUT = 16;
+const DIST_IN = 16, DIST_OUT = 46;
+const ROAD2_IN = 46, ROAD2_OUT = 50;
+const FOREST_IN = 50, FOREST_OUT = 62, BASE_R = 66;
+const WEDGES = 8, STEP = Math.PI * 2 / WEDGES;
+
+/* deterministic pseudo-random so the city grows the same way every visit */
+let seed = 7;
+function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+function polar(r, a) { return new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r); }
+
+/* ---------- renderer / scene / camera ---------- */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(stage.clientWidth, stage.clientHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+document.getElementById('fallback').style.display = 'none';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(C.cream);
+scene.fog = new THREE.Fog(C.cream, 170, 300);
+
+const camera = new THREE.PerspectiveCamera(45, stage.clientWidth / stage.clientHeight, 0.1, 600);
+camera.position.set(58, 52, 58);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 26;
+controls.maxDistance = 170;
+controls.maxPolarAngle = 1.35;
+controls.autoRotate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+controls.autoRotateSpeed = 0.55;
+let resumeTimer = null;
+controls.addEventListener('start', () => { controls.autoRotate = false; if (resumeTimer) clearTimeout(resumeTimer); });
+controls.addEventListener('end', () => { resumeTimer = setTimeout(() => { controls.autoRotate = true; }, 4000); });
+
+/* ---------- lights ---------- */
+scene.add(new THREE.AmbientLight(0xFFF4D6, 0.75));
+const sun = new THREE.DirectionalLight(0xFFF1CF, 1.6);
+sun.position.set(60, 90, 30);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -75; sun.shadow.camera.right = 75;
+sun.shadow.camera.top = 75; sun.shadow.camera.bottom = -75;
+sun.shadow.camera.far = 260;
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xDCEEFF, 0.35);
+fill.position.set(-50, 40, -60);
+scene.add(fill);
+
+/* ---------- materials / shared geometry ---------- */
+const mat = (color, rough = 0.95) => new THREE.MeshStandardMaterial({ color, roughness: rough });
+
+function flatRing(rIn, rOut, y, color) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(rIn, rOut, 96), mat(color));
+  m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = true;
+  scene.add(m); return m;
+}
+
+/* ---------- ground: base disc, meadow, roads, forest floor ---------- */
+const base = new THREE.Mesh(new THREE.CylinderGeometry(BASE_R, BASE_R + 1.5, 1.2, 96), mat(C.baseGreen));
+base.position.y = 0; base.receiveShadow = true;
+scene.add(base);
+
+flatRing(DIST_IN, DIST_OUT, 0.615, C.meadow);          // district meadow
+flatRing(ROAD1_IN, ROAD1_OUT, 0.625, C.road);          // inner ring road
+flatRing(ROAD2_IN, ROAD2_OUT, 0.625, C.road);          // outer ring road
+flatRing(FOREST_IN, FOREST_OUT, 0.615, C.forestFloor); // forest floor
+
+/* radial paths along the wedge boundaries */
+const pathGeo = new THREE.BoxGeometry(DIST_OUT - HUB_R + 4, 0.04, 1.7);
+const pathMat = mat(C.road);
+for (let i = 0; i < WEDGES; i++) {
+  const a = i * STEP;
+  const p = new THREE.Mesh(pathGeo, pathMat);
+  const mid = polar((HUB_R + DIST_OUT + 4) / 2, a);
+  p.position.set(mid.x, 0.63, mid.z);
+  p.rotation.y = -a;
+  p.receiveShadow = true;
+  scene.add(p);
+}
+
+/* ---------- the hub: plaza, spokes, golden heart, dimension gems ---------- */
+const plaza = new THREE.Mesh(new THREE.CylinderGeometry(HUB_R, HUB_R + 0.4, 0.55, 64), mat(C.paper));
+plaza.position.y = 0.85; plaza.castShadow = true; plaza.receiveShadow = true;
+scene.add(plaza);
+
+const spokeGeo = new THREE.BoxGeometry(HUB_R - 1.5, 0.1, 0.85);
+const spokeMat = mat(C.navy);
+for (let i = 0; i < WEDGES; i++) {
+  const a = i * STEP;
+  const s = new THREE.Mesh(spokeGeo, spokeMat);
+  const mid = polar((HUB_R - 1.5) / 2 + 0.6, a);
+  s.position.set(mid.x, 1.16, mid.z);
+  s.rotation.y = -a;
+  scene.add(s);
+}
+
+const heart = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 2.0, 0.9, 24), mat(C.gold, 0.45));
+heart.position.y = 1.55; heart.castShadow = true;
+scene.add(heart);
+const heartTop = new THREE.Mesh(new THREE.SphereGeometry(0.85, 20, 16),
+  new THREE.MeshStandardMaterial({ color: C.gold, roughness: 0.3, metalness: 0.55 }));
+heartTop.position.y = 2.45; heartTop.castShadow = true;
+scene.add(heartTop);
+
+const gemGeo = new THREE.IcosahedronGeometry(0.62, 0);
+for (let i = 0; i < WEDGES; i++) {
+  const a = i * STEP + STEP / 2;
+  const g = new THREE.Mesh(gemGeo, new THREE.MeshStandardMaterial({ color: GEMS[i], roughness: 0.35 }));
+  const pos = polar(8.6, a);
+  g.position.set(pos.x, 1.45, pos.z);
+  g.castShadow = true;
+  scene.add(g);
+}
+
+/* ---------- houses ---------- */
+function roofPrism(w, h, d) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-w / 2, 0); shape.lineTo(w / 2, 0); shape.lineTo(0, h); shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+  geo.translate(0, 0, -d / 2);
+  return geo;
+}
+const wallGeo = new THREE.BoxGeometry(5, 3, 4.4);
+const wallMat = mat(C.wall);
+const roofMats = [mat(C.navy), mat(C.orange)];
+for (let i = 0; i < WEDGES; i++) {
+  const a = i * STEP + STEP / 2;
+  const house = new THREE.Group();
+  const walls = new THREE.Mesh(wallGeo, wallMat);
+  walls.position.y = 1.5; walls.castShadow = true; walls.receiveShadow = true;
+  house.add(walls);
+  const roof = new THREE.Mesh(roofPrism(5.9, 2.3, 5.2), roofMats[i % 2]);
+  roof.position.y = 3; roof.castShadow = true;
+  house.add(roof);
+  const pos = polar(33, a);
+  house.position.set(pos.x, 0.6, pos.z);
+  house.rotation.y = -a + Math.PI / 2; // gable end faces the hub
+  scene.add(house);
+}
+
+/* ---------- ponds ---------- */
+const pondGeo = new THREE.CylinderGeometry(3.2, 3.2, 0.18, 28);
+const pondMat = new THREE.MeshStandardMaterial({ color: C.pond, roughness: 0.25 });
+const pondRimGeo = new THREE.TorusGeometry(3.25, 0.16, 8, 28);
+const rimMat = mat(C.road);
+for (let i = 0; i < WEDGES; i++) {
+  const a = i * STEP + STEP / 2 - 0.19;
+  const pos = polar(24.5, a);
+  const pond = new THREE.Mesh(pondGeo, pondMat);
+  pond.position.set(pos.x, 0.68, pos.z);
+  pond.receiveShadow = true;
+  scene.add(pond);
+  const rim = new THREE.Mesh(pondRimGeo, rimMat);
+  rim.rotation.x = Math.PI / 2;
+  rim.position.set(pos.x, 0.7, pos.z);
+  scene.add(rim);
+}
+
+/* ---------- garden beds (one InstancedMesh, per-instance crop colours) ---------- */
+const bedGeo = new THREE.BoxGeometry(3.1, 0.4, 2.1);
+const beds = new THREE.InstancedMesh(bedGeo, new THREE.MeshStandardMaterial({ roughness: 0.9 }), WEDGES * 4);
+beds.castShadow = true; beds.receiveShadow = true;
+{
+  const dummy = new THREE.Object3D(); const col = new THREE.Color(); let k = 0;
+  for (let i = 0; i < WEDGES; i++) {
+    const aC = i * STEP + STEP / 2;
+    const spots = [[27.5, 0.16], [30.5, 0.21], [38.5, -0.14], [41, 0.05]];
+    for (const [r, off] of spots) {
+      const pos = polar(r, aC + off);
+      dummy.position.set(pos.x, 0.82, pos.z);
+      dummy.rotation.set(0, -aC + (rnd() - 0.5) * 0.5, 0);
+      dummy.updateMatrix();
+      beds.setMatrixAt(k, dummy.matrix);
+      beds.setColorAt(k, col.setHex(CROPS[Math.floor(rnd() * CROPS.length)]));
+      k++;
+    }
+  }
+}
+scene.add(beds);
+
+/* ---------- trees: forest + district cedars in shared InstancedMeshes ---------- */
+const treeSpots = []; // {x, z, s}
+for (let n = 0; n < 300; n++) { // outer cedar forest
+  const a = rnd() * Math.PI * 2;
+  const r = FOREST_IN + 1.2 + rnd() * (FOREST_OUT - FOREST_IN - 2);
+  const pos = polar(r, a);
+  treeSpots.push({ x: pos.x, z: pos.z, s: 0.85 + rnd() * 0.7 });
+}
+for (let i = 0; i < WEDGES; i++) { // a few cedars inside each homestead
+  const aC = i * STEP + STEP / 2;
+  const spots = [[20.5, -0.24], [29, -0.27], [36, 0.26], [43, -0.06]];
+  for (const [r, off] of spots) {
+    const pos = polar(r, aC + off);
+    treeSpots.push({ x: pos.x, z: pos.z, s: 0.7 + rnd() * 0.45 });
+  }
+}
+{
+  const n = treeSpots.length;
+  const trunkGeo = new THREE.CylinderGeometry(0.22, 0.3, 1.1, 6);
+  const coneGeo = new THREE.ConeGeometry(1.7, 4.6, 8);
+  const cone2Geo = new THREE.ConeGeometry(1.15, 3.2, 8);
+  const trunks = new THREE.InstancedMesh(trunkGeo, mat(C.trunk), n);
+  const cones = new THREE.InstancedMesh(coneGeo, mat(C.deepGreen), n);
+  const cones2 = new THREE.InstancedMesh(cone2Geo, mat(C.deepGreen), n);
+  cones.castShadow = true;
+  const dummy = new THREE.Object3D();
+  treeSpots.forEach((t, i) => {
+    dummy.rotation.set(0, rnd() * Math.PI, 0);
+    dummy.scale.setScalar(t.s);
+    dummy.position.set(t.x, 0.6 + 0.55 * t.s, t.z); dummy.updateMatrix();
+    trunks.setMatrixAt(i, dummy.matrix);
+    dummy.position.set(t.x, 0.6 + (1.1 + 2.1) * t.s, t.z); dummy.updateMatrix();
+    cones.setMatrixAt(i, dummy.matrix);
+    dummy.position.set(t.x, 0.6 + (1.1 + 4.1) * t.s, t.z); dummy.updateMatrix();
+    cones2.setMatrixAt(i, dummy.matrix);
+  });
+  scene.add(trunks, cones, cones2);
+}
+
+/* ---------- living hedges: radial rows + two rings (one InstancedMesh) ---------- */
+{
+  const spots = [];
+  for (let i = 0; i < WEDGES; i++) { // radial hedges between districts
+    const a = i * STEP;
+    for (let r = DIST_IN + 1.5; r <= DIST_OUT - 1; r += 2.3) {
+      const pos = polar(r, a);
+      spots.push({ x: pos.x, z: pos.z });
+    }
+  }
+  for (const ringR of [17.4, 44.6]) { // hedge rings hugging the roads
+    const circ = 2 * Math.PI * ringR, count = Math.floor(circ / 2.1);
+    for (let j = 0; j < count; j++) {
+      const pos = polar(ringR, (j / count) * Math.PI * 2);
+      spots.push({ x: pos.x, z: pos.z });
+    }
+  }
+  const hedgeGeo = new THREE.SphereGeometry(1.05, 10, 8);
+  const hedges = new THREE.InstancedMesh(hedgeGeo, mat(C.hedge), spots.length);
+  const dummy = new THREE.Object3D();
+  spots.forEach((s, i) => {
+    dummy.position.set(s.x, 1.05, s.z);
+    dummy.scale.set(1.15, 0.78, 1.15);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    hedges.setMatrixAt(i, dummy.matrix);
+  });
+  hedges.castShadow = true; hedges.receiveShadow = true;
+  scene.add(hedges);
+}
+
+/* ---------- loop / resize ---------- */
+function onResize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+
+renderer.setAnimationLoop(() => {
+  controls.update();
+  heartTop.rotation.y += 0.005;
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
