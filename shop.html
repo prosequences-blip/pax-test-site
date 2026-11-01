@@ -471,6 +471,12 @@
   .paycard .payqr{background:#fff; border-radius:10px; padding:8px; width:156px; height:156px; margin:8px auto 0;}
   .paycard .payqr svg{width:140px; height:140px; display:block;}
   .paycard .qrlabel{font-size:11px; color:var(--muted); text-align:center; margin:0;}
+  .paycard .payqr.sm{width:88px; height:88px; padding:6px;}
+  .paycard .payqr.sm svg{width:76px; height:76px;}
+  .paycard .netrow{border-top:1px solid var(--line); padding-top:9px; margin-top:9px;}
+  .paycard .netname{font-size:13.5px; font-weight:650; margin:0;}
+  .paycard .netname .pref{color:var(--accent2); font-weight:650;}
+  .paycard .addr{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:10.5px; line-height:1.55; word-break:break-all; color:var(--accent2); user-select:all; margin:4px 0 0;}
   footer{text-align:center; color:var(--muted); font-size:12.5px; margin-top:30px; line-height:1.6;}
 </style>
 </head>
@@ -716,6 +722,28 @@
         <div class="payqr" data-qr="https://app.chime.com/link/qr?u=Jaeger-Young" role="img" aria-label="QR code - scan to pay with Chime"></div>
         <p class="qrlabel">Scan to pay</p>
         <div class="row"><a class="buy" href="https://app.chime.com/link/qr?u=Jaeger-Young">Pay with Chime</a></div>
+      </article>
+      <article class="paycard">
+        <h3>Crypto</h3>
+        <p class="note">Prices are quoted in USD — send the exact USD value in USDC (preferred — a dollar stays a dollar), or in BTC at the rate we confirm by email before you send. Only send on the matching network: a Solana address only receives on Solana, and the same goes for each of the others. We place your order after the payment confirms on-chain.</p>
+        <div class="netrow">
+          <p class="netname">USDC on Solana <span class="pref">— preferred</span></p>
+          <div class="payqr sm" data-qr="solana:Gd6scARfgLyMLxyeDCuBRWskyNdh3obwuNT6LX9Dhkxo" role="img" aria-label="QR code - scan to pay with USDC on Solana"></div>
+          <p class="qrlabel">Scan to pay</p>
+          <p class="addr">Gd6scARfgLyMLxyeDCuBRWskyNdh3obwuNT6LX9Dhkxo</p>
+        </div>
+        <div class="netrow">
+          <p class="netname">USDC on Base / Ethereum</p>
+          <div class="payqr sm" data-qr="ethereum:0x4ff867d0cacd398623632a5781702752f0b49bdd" role="img" aria-label="QR code - scan to pay with USDC on Base or Ethereum"></div>
+          <p class="qrlabel">Scan to pay</p>
+          <p class="addr">0x4ff867d0cacd398623632a5781702752f0b49bdd</p>
+        </div>
+        <div class="netrow">
+          <p class="netname">Bitcoin</p>
+          <div class="payqr sm" data-qr="bitcoin:bc1qmsevhpukfqyyz68kd3r069c60ddwgp29l3tcv8" role="img" aria-label="QR code - scan to pay with Bitcoin"></div>
+          <p class="qrlabel">Scan to pay</p>
+          <p class="addr">bc1qmsevhpukfqyyz68kd3r069c60ddwgp29l3tcv8</p>
+        </div>
       </article>
   </div>
 
