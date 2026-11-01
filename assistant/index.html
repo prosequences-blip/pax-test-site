@@ -177,14 +177,14 @@ Want to see what a bot like this looks like for a small business? Try our <a hre
 
 <button id="chat-btn" type="button">Chat with Pax</button>
 <div id="chat-panel" role="dialog" aria-label="Chat panel">
-  <div id="chat-head">Pax — Prosequences assistant <small>Automated assistant — replies instantly</small></div>
+  <div id="chat-head">Pax · Prosequences assistant <small>Here to help — answers right away, no waiting.</small></div>
   <div id="chat-log" role="log" aria-live="polite" aria-label="Conversation"></div>
   <div id="chat-menu">
-    <button type="button" data-act="book">Book a consult</button>
-    <button type="button" data-act="services">Services</button>
-    <button type="button" data-act="prices">Prices</button>
-    <button type="button" data-act="hours">Hours &amp; areas</button>
-    <button type="button" data-act="human">Talk to a human</button>
+    <button type="button" data-act="mission">🌿 Our mission</button>
+    <button type="button" data-act="projects">🌱 What are you working on?</button>
+    <button type="button" data-act="support">🤲 How can I help?</button>
+    <button type="button" data-act="services">🛍️ What do you offer?</button>
+    <button type="button" data-act="book">Book a free intro call</button>
   </div>
   <form id="chat-form">
     <label class="sr-only" for="chat-input">Type your message</label>
@@ -276,7 +276,15 @@ const FAQS = [
   { intent: "turnaround", utterances: ["How long does it take?", "How fast can you do it?", "When would it be done?"],
     answer: "It depends on the job, and we'd rather be straight with you than invent a date. Small fixes are often turned around in a few days, while monthly bookkeeping and content packs run on a regular rhythm once they're set up. On the free intro call, Jaeger will give you a realistic timeline for your specific job before anything starts — and if we can't meet a deadline, we'll tell you that upfront too." },
   { intent: "remote_visit", utterances: ["Do you come to my house?", "Can you visit in person?", "Is the work remote?"],
-    answer: "Most of our work is remote, by phone or video call — that's how we can help people anywhere. If you're in our local area (Hillsboro, Portland, Beaverton, and the other towns nearby), in-person help is possible by arrangement. Either way, the first step is the same: a short conversation about what you need." }
+    answer: "Most of our work is remote, by phone or video call — that's how we can help people anywhere. If you're in our local area (Hillsboro, Portland, Beaverton, and the other towns nearby), in-person help is possible by arrangement. Either way, the first step is the same: a short conversation about what you need." },
+  { intent: "mission", utterances: ["What is your mission?", "What's your mission?", "Tell me about your mission", "What is the Wellness Wheel?", "What is the wellness wheel?", "About you", "Why do you exist?"],
+    answer: "Our mission: Prosequences Wellness — we tend the earth that tends us. We build gentle wellness tools on the eight dimensions of the Wellness Wheel — environment, social, emotional, intellectual, spiritual, physical, financial, and occupational — and we do ecology work rooted in permaculture and kin's-domain ideas: circular cities, living hedges, and land that feeds the families who care for it. Everything we sell and every service we book helps fund the ecology side." },
+  { intent: "projects", utterances: ["What are you working on?", "What projects do you have?", "What is Living Rings?", "Living rings", "Tell me about your YouTube channels", "What are your projects?"],
+    answer: "What we're working on: Living Rings — free living-hedge starter kits paired with Silly Bird nature stories for families (first kits planned for summer 2027, funded by small grants and supporters like you). Two YouTube channels: Silly Bird Kids — nursery rhymes and public-domain tales — and Prosequences Ambient, calm original soundscapes. Wellness ebooks are in the works too. And the client services here — computer help, bookkeeping, websites — pay the bills and seed the mission." },
+  { intent: "support", utterances: ["How can I help?", "How can I support you?", "Can I donate?", "How do I donate?", "I'd like to donate", "How can I support Prosequences?"],
+    answer: "We are accepting support, donations, and direct funding — thank you for asking. Three easy ways to help: 1) Give directly — Ko-fi tips, a Gumroad membership (Seedling $5/mo or Full Wheel $9/mo), or any amount through our support page: Venmo, Cash App, PayPal, Chime, card, even crypto. 2) Shop — every order from our store funds the work. 3) Spread the word — share the channels and the mission. For partnerships or larger funding, use our contact form and Jaeger will reply personally." },
+  { intent: "shop", utterances: ["Do you have a shop?", "Where is your shop?", "Where's the shop?", "What do you sell?", "Can I buy merch?", "Where is the store?"],
+    answer: "Our shop carries the Wellness Wheel collection — tees, the Breathe mug, journal, tote, and a winter collection with socks, a hoodie, and ornaments — printed on demand, and every order supports the mission. Browse it here: ../shop.html — or ask me about any item." }
 ];
 
 const INTENT_KEYWORDS = {
@@ -295,13 +303,17 @@ const INTENT_KEYWORDS = {
   who_team: ["who", "jaeger", "pax", "team", "owner", "runs", "company", "behind"],
   privacy: ["privacy", "private", "data", "share", "shared", "sell", "sold", "secure", "information", "details"],
   turnaround: ["fast", "long", "quick", "quickly", "soon", "timeline", "deadline", "takes", "take", "wait", "done", "ready"],
-  remote_visit: ["visit", "come", "travel", "meet", "house", "home", "person", "remote"]
+  remote_visit: ["visit", "come", "travel", "meet", "house", "home", "person", "remote"],
+  mission: ["mission", "purpose", "exist", "wellness", "wheel", "why", "about"],
+  projects: ["working", "projects", "project", "living", "rings", "hedge", "hedges", "kits", "kit", "youtube", "channels", "channel", "videos", "video", "ebooks"],
+  support: ["support", "donate", "donation", "donations", "volunteer", "contribute", "fund", "funding", "philanthropist", "philanthropists", "philanthropy", "give", "help"],
+  shop: ["shop", "store", "buy", "products", "product", "merch", "sell", "order", "orders", "tee", "mug", "ornaments", "collection"]
 };
 
 const STOPWORDS = new Set(("a an the is are do does did you your yours we our i me my it its of to for in on at and or if so be can could would should what whats when where which who how much many any is are was were have has had will would there here this that with from by about into over under again further then once").split(" "));
 
-const FALLBACK_ANSWER = "I don't want to guess at that one. I can answer questions about our services — computer help & AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — plus prices, hours, and the areas we serve. Or reach Jaeger directly at " + PHONE_TEXT + ", " + HOURS_SHORT + ".";
-const HANDOFF_OFFER = "Let me point you to a person so you're not stuck with me. Call or text Jaeger at " + PHONE_TEXT + " (" + HOURS_SHORT + "), or use our contact form: " + FORM_URL + " — a person reads every message. And I'm happy to keep trying here; ask me about any of our services.";
+const FALLBACK_ANSWER = "I don't want to guess at that one. I can answer questions about our mission and what we're working on, how you can support the work, our shop, and our services — computer help & AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — plus prices, hours, and the areas we serve. Try me in your own words, or reach Jaeger directly at " + PHONE_TEXT + ", " + HOURS_SHORT + ".";
+const HANDOFF_OFFER = "Let me point you to a person so you're not stuck with me. Call or text Jaeger at " + PHONE_TEXT + " (" + HOURS_SHORT + "), or use our contact form: " + FORM_URL + " — a person reads every message. And I'm happy to keep trying here; ask me about our mission, our projects, or any of our services.";
 const HANDOFF_ANSWER = "Of course. Jaeger is the person behind Prosequences — call or text him at " + PHONE_TEXT + ", " + HOURS_SHORT + ". Our contact form is " + FORM_URL + " and a person reads every message. If you'd like him to call you instead, tap “Book” and I'll take your details for a callback request.";
 const URGENT_ANSWER = "That sounds urgent, and I'm glad you landed here. Two things that help right away: disconnect the computer from Wi-Fi or unplug the network cable, and don't pay anything or call any number shown on a warning screen — those are usually part of the scam. Then call or text Jaeger at " + PHONE_TEXT + " and tell him what you saw. If we're closed, leave a message — urgent messages get picked up first when we reopen.";
 
@@ -326,7 +338,7 @@ const SMALL_TALK = [
     answer: "I'm Pax, Prosequences' automated assistant — not a person. I answer questions and take booking requests here; Jaeger, the person behind Prosequences, does the work and confirms every booking. You can reach him at " + PHONE_TEXT + "." },
   { intent: "small_talk_help", flow: "flow-1-greeting-menu",
     phrases: ["help", "menu", "help me", "what can you do", "options", "what are my options"],
-    answer: "I can explain any of our services — computer help & AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — plus prices, hours, and the areas we serve, or take a booking request for a free intro call. The buttons below cover the same ground." }
+    answer: "I can tell you about our mission and what we're working on, how you can support the work, and explain any of our services — computer help & AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — plus our shop, prices, hours, and the areas we serve, or take a booking request for a free intro call. The buttons below cover the same ground." }
 ];
 
 function smallTalkFor(norm) {
@@ -497,7 +509,8 @@ function classify(session, rawText, opts) {
   // single clear topic word is enough to match.
   const DISTINCTIVE = new Set(["bookkeeping", "translation", "translate", "website", "websites",
     "inbox", "detox", "copywriting", "spanish", "unread", "quickbooks", "hosting", "domain",
-    "captions", "instagram", "facebook", "privacy", "private", "pax", "jaeger", "schedule", "fast", "long"]);
+    "captions", "instagram", "facebook", "privacy", "private", "pax", "jaeger", "schedule", "fast", "long",
+    "mission", "projects", "support", "donate", "donation", "volunteer", "shop", "store", "merch", "youtube", "hedge"]);
   const inputTokens = new Set(toks);
   let best = null, bestScore = 0;
   for (const f of FAQS) {
@@ -561,7 +574,7 @@ function greetingFor(now) {
   const open = isOpenAt(now.getDay(), now.getHours() + now.getMinutes() / 60);
   // Plain disclosure, first thing: this is an automated assistant, not a
   // person — said once, warmly, before anything is asked of the visitor.
-  const intro = "Hi, this is Prosequences' automated assistant, Pax. I'm not a person, but I can answer questions about our services in full and take a booking request if you'd like one.";
+  const intro = "Hello — I'm Prosequences' automated assistant, Pax. I'm not a person, but I answer questions in full, right away. 🌿 We tend the earth that tends us. Prosequences Wellness builds gentle wellness tools on the eight dimensions of the Wellness Wheel, and does hands-on ecology work — living hedges, permaculture, and circular-city ideas. The services and shop here are how we fund that mission. Ask me anything: our mission, what we're working on, how you can help, what we offer, prices, or hours. And if you'd like to order or book something, just say the word — I'll start it.";
   return open
     ? intro + " We're around now — hours are " + HOURS_TEXT + ". Ask me a question, or tap a topic below."
     : intro + " We're closed right now — our hours are " + HOURS_TEXT + ". " + HOLIDAY_NOTE + " You can still ask questions and leave a booking request, and Jaeger will confirm when we reopen.";
@@ -855,6 +868,10 @@ function greetingFor(now) {
     if (act === "book") { startFlow("book"); return; }
     if (act === "human") { addBot(HANDOFF_ANSWER); return; }
     if (act === "services") { addBot(FAQ_BY_INTENT.services_overview.answer); return; }
+    if (act === "mission") { addBot(FAQ_BY_INTENT.mission.answer); return; }
+    if (act === "projects") { addBot(FAQ_BY_INTENT.projects.answer); return; }
+    if (act === "support") { addBot(FAQ_BY_INTENT.support.answer); return; }
+    if (act === "shop") { addBot(FAQ_BY_INTENT.shop.answer); return; }
     if (act === "prices") { addBot(FAQ_BY_INTENT.prices.answer); return; }
     if (act === "hours") { addBot(FAQ_BY_INTENT.hours.answer); addBot(FAQ_BY_INTENT.areas.answer); return; }
   }

@@ -120,22 +120,37 @@
 }
 </script>
 </head>
-<body><h1>Hello from Pax</h1><p>This is a free GitHub Pages test site, ready to publish from a public repo.</p>
+<body><h1>Prosequences</h1>
+<p><strong>🌿 We tend the earth that tends us.</strong></p>
+<p>Gentle wellness tools, ecology work, and down-to-earth services — computer help, bookkeeping, and one-page websites across Oregon. Open daily 12 PM–7 PM.</p>
 <nav><p><a href="map.html">Map</a> · <a href="weather.html">Weather</a> · <a href="diagram.html">Diagram</a> · <a href="contact.html">Contact</a> · <a href="calendar.html">Calendar</a> · <a href="shop.html">Shop</a> · <a href="assistant/">Chat with Pax</a></p></nav>
 <p><strong>Our mission:</strong> Prosequences Wellness 🌿 We tend the earth that tends us. Gentle wellness tools built on the eight dimensions of the Wellness Wheel — plus ecology work rooted in permaculture and kin's-domain ideas: circular cities, living hedges, and land that feeds the families who care for it.</p>
 <p>Prosequences is accepting support, donations, and direct funding from philanthropists and patrons who share this mission — see <a href="hub/">Support Prosequences</a> or our <a href="https://ko-fi.com/prosequences">Ko-fi page</a>.</p>
 <footer><p>Prosequences Wellness 🌿 We tend the earth that tends us. Prosequences is accepting support, donations, and direct funding from philanthropists and patrons who share this mission.</p></footer>
-<!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+<style>
+#pax-chat-btn{position:fixed;right:16px;bottom:16px;z-index:9998;padding:12px 18px;border:0;border-radius:999px;background:#2e7d4f;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+#pax-chat-panel{display:none;position:fixed;right:16px;bottom:70px;z-index:9999;width:380px;max-width:calc(100vw - 24px);height:560px;max-height:calc(100dvh - 96px);background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);overflow:hidden;flex-direction:column}
+#pax-chat-panel.open{display:flex}
+#pax-chat-head{display:flex;justify-content:space-between;align-items:center;background:#2e7d4f;color:#fff;padding:8px 12px;font-weight:600}
+#pax-chat-close{background:transparent;border:0;color:#fff;font-size:1.25rem;cursor:pointer;line-height:1;padding:0 4px}
+#pax-chat-frame{flex:1;width:100%;border:0}
+@media (max-width:480px){#pax-chat-panel{right:12px;left:12px;width:auto}}
+</style>
+<button id="pax-chat-btn" type="button" aria-expanded="false" aria-controls="pax-chat-panel">💬 Chat with Pax</button>
+<div id="pax-chat-panel" role="dialog" aria-label="Chat with Pax">
+  <div id="pax-chat-head"><span>Pax · Prosequences assistant</span><button id="pax-chat-close" type="button" aria-label="Close chat">×</button></div>
+  <iframe id="pax-chat-frame" src="assistant/" title="Chat with Pax — Prosequences assistant"></iframe>
+</div>
+<script>
 (function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/6ae553b9a09acd347b012403/1k67su3bh';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
+  var btn=document.getElementById("pax-chat-btn"),panel=document.getElementById("pax-chat-panel"),closeBtn=document.getElementById("pax-chat-close");
+  function toggle(force){
+    var open=(typeof force==="boolean")?force:!panel.classList.contains("open");
+    panel.classList.toggle("open",open);
+    btn.setAttribute("aria-expanded",open?"true":"false");
+  }
+  btn.addEventListener("click",function(){toggle();});
+  closeBtn.addEventListener("click",function(){toggle(false);});
 })();
 </script>
-<!--End of Tawk.to Script-->
 </body></html>
