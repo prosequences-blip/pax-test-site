@@ -463,6 +463,11 @@
   a.btn .tt{font-size:16.5px; font-weight:650; line-height:1.25;}
   a.btn .ds{font-size:13px; color:var(--muted); margin-top:2px; line-height:1.4; display:block;}
   a.btn .go{margin-left:auto; color:var(--muted); font-size:19px;}
+  .paycard{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:15px 17px; display:flex; flex-direction:column; gap:6px;}
+  .paycard h3{font-size:16px; font-weight:650;}
+  .paycard .handle{font-size:14.5px; color:var(--accent2); font-weight:650;}
+  .paycard .note{font-size:12.5px; color:var(--muted); line-height:1.45; flex:1;}
+  .paycard .row{margin-top:8px;}
   footer{text-align:center; color:var(--muted); font-size:12.5px; margin-top:30px; line-height:1.6;}
 </style>
 </head>
@@ -672,6 +677,42 @@
         </div>
       </article>
   </div>
+
+  <h2>Pay Your Way</h2>
+  <p class="blurb">Buying from one of our other stores and your preferred way to pay isn't offered there? Tell us — we can take your payment here and place the order for you.</p>
+  <div class="how" style="margin:0 auto 14px;"><b>The default stays the default:</b> every product above checks out securely on its store page with <b>card, Apple Pay and Google Pay</b>. The options below are simply there if you'd rather pay with an app you already use.</div>
+  <div class="grid">
+      <article class="paycard">
+        <h3>Venmo</h3>
+        <p class="handle">@Jaeger-Young</p>
+        <p class="note">Send to @Jaeger-Young in the Venmo app, or tap through to our Venmo page.</p>
+        <div class="row"><a class="buy" href="https://venmo.com/u/Jaeger-Young">Pay with Venmo</a></div>
+      </article>
+      <article class="paycard">
+        <h3>Cash App</h3>
+        <p class="handle">$SillyBird9</p>
+        <p class="note">Send to $SillyBird9 in Cash App, or tap through to our Cash App page.</p>
+        <div class="row"><a class="buy" href="https://cash.app/$SillyBird9">Pay with Cash App</a></div>
+      </article>
+      <article class="paycard">
+        <h3>PayPal</h3>
+        <p class="handle">Jaeger Young</p>
+        <p class="note">Tap through to our PayPal payment page — no PayPal account needed to send as a guest where PayPal allows it.</p>
+        <div class="row"><a class="buy" href="https://www.paypal.com/qrcodes/p2pqrc/HNWLJB59WJZLU">Pay with PayPal</a></div>
+      </article>
+      <article class="paycard">
+        <h3>Chime</h3>
+        <p class="handle">$Jaeger-Young</p>
+        <p class="note">Honest note: Chime payments work member-to-member, so this one is for fellow Chime members.</p>
+        <div class="row"><a class="buy" href="https://app.chime.com/link/qr?u=Jaeger-Young">Pay with Chime</a></div>
+      </article>
+  </div>
+
+  <a class="btn" href="order.html">
+    <span><span class="tt">Order with your payment app</span>
+    <span class="ds">Tell us what you'd like, send payment to the handle shown, and we place the order for you — confirmation and tracking by email.</span></span>
+    <span class="go">›</span>
+  </a>
 
   <a class="btn" href="https://in-my-swag.printify.me/">
     <span><span class="tt">Visit the full store</span>
