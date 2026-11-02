@@ -145,6 +145,7 @@
 
 <footer><p>Prosequences Wellness 🌿 We tend the earth that tends us. Prosequences is accepting support, donations, and direct funding from philanthropists and patrons who share this mission.</p></footer>
 <style>
+#pax-chat-btn.away{display:none}
 #pax-chat-btn{position:fixed;right:16px;bottom:16px;z-index:9998;padding:12px 18px;border:0;border-radius:999px;background:#2e7d4f;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.3)}
 #pax-chat-panel{display:none;position:fixed;right:16px;bottom:70px;z-index:9999;width:380px;max-width:calc(100vw - 24px);height:560px;max-height:calc(100dvh - 96px);background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);overflow:hidden;flex-direction:column}
 #pax-chat-panel.open{display:flex}
@@ -165,6 +166,7 @@
     var open=(typeof force==="boolean")?force:!panel.classList.contains("open");
     panel.classList.toggle("open",open);
     btn.setAttribute("aria-expanded",open?"true":"false");
+    btn.classList.toggle("away",open);
   }
   btn.addEventListener("click",function(){toggle();});
   closeBtn.addEventListener("click",function(){toggle(false);});
