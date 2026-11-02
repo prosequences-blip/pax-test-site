@@ -161,14 +161,8 @@
   html.embedded #chat-panel { display: flex; position: fixed; inset: 0; width: auto; max-width: none; height: auto; max-height: none; right: 0; bottom: 0; border: 0; border-radius: 0; box-shadow: none; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500..800;1,9..144,500..800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/site.css">
 </head>
 <body>
-<div class="site-bg" aria-hidden="true"><svg class="wheel wheel-a" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="97"/><circle cx="100" cy="100" r="83"/><circle cx="100" cy="100" r="58"/><circle cx="100" cy="100" r="25"/><g><line x1="100" y1="100" x2="197" y2="100"/><line x1="100" y1="100" x2="168.6" y2="168.6"/><line x1="100" y1="100" x2="100" y2="197"/><line x1="100" y1="100" x2="31.4" y2="168.6"/><line x1="100" y1="100" x2="3" y2="100"/><line x1="100" y1="100" x2="31.4" y2="31.4"/><line x1="100" y1="100" x2="100" y2="3"/><line x1="100" y1="100" x2="168.6" y2="31.4"/></g><g fill="currentColor" stroke="none"><circle cx="170" cy="100" r="3.2"/><circle cx="149.5" cy="149.5" r="3.2"/><circle cx="100" cy="170" r="3.2"/><circle cx="50.5" cy="149.5" r="3.2"/><circle cx="30" cy="100" r="3.2"/><circle cx="50.5" cy="50.5" r="3.2"/><circle cx="100" cy="30" r="3.2"/><circle cx="149.5" cy="50.5" r="3.2"/></g></svg><svg class="wheel wheel-b" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="97"/><circle cx="100" cy="100" r="83"/><circle cx="100" cy="100" r="58"/><circle cx="100" cy="100" r="25"/><g><line x1="100" y1="100" x2="197" y2="100"/><line x1="100" y1="100" x2="168.6" y2="168.6"/><line x1="100" y1="100" x2="100" y2="197"/><line x1="100" y1="100" x2="31.4" y2="168.6"/><line x1="100" y1="100" x2="3" y2="100"/><line x1="100" y1="100" x2="31.4" y2="31.4"/><line x1="100" y1="100" x2="100" y2="3"/><line x1="100" y1="100" x2="168.6" y2="31.4"/></g><g fill="currentColor" stroke="none"><circle cx="170" cy="100" r="3.2"/><circle cx="149.5" cy="149.5" r="3.2"/><circle cx="100" cy="170" r="3.2"/><circle cx="50.5" cy="149.5" r="3.2"/><circle cx="30" cy="100" r="3.2"/><circle cx="50.5" cy="50.5" r="3.2"/><circle cx="100" cy="30" r="3.2"/><circle cx="149.5" cy="50.5" r="3.2"/></g></svg></div>
-
 <main>
   <h1>Chat with Pax</h1>
   <p class="sub">Prosequences' automated assistant. Ask it anything about what we do — it answers in full, right here, with nothing held back until you book.</p>
@@ -178,7 +172,7 @@
       <li>Explain any of our services — computer help &amp; AI setup, translation, one-page websites, bookkeeping, social media content packs, copywriting, and inbox detox — with real detail and a helpful first step for each.</li>
       <li>Tell you how our pricing works, our hours, and the areas we serve.</li>
       <li>Take a booking request for a free 15-minute intro call, then hand you the summary and the contact form so <i>you</i> stay in control of sending it.</li>
-      <li>Point you straight to Jaeger — call or text (971) 345-1174 — whenever you'd rather talk to a person.</li>
+      <li>Get you to Jaeger whenever you'd rather talk to a person: if Pax can't answer, it first takes a few quick details — who you are, how to reach you, and what it's about — so his reply actually helps, then hands you his email and number.</li>
     </ul>
     <p class="note">Pax is an automated assistant, not a person. This chat runs entirely in your browser: nothing you type is sent or stored. If you finish a booking request, Pax shows you the summary and a link to our contact form — sending it is always your choice.</p>
   </div>
@@ -220,6 +214,7 @@ const SCHEDULE = [[12, 19], [12, 19], [12, 19], [12, 19], [12, 19], [12, 19], [1
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_PLURAL = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
 const PHONE_TEXT = "(971) 345-1174";
+const EMAIL_TEXT = "prosequences9@gmail.com";
 const FORM_URL = "https://tally.so/r/dbEa8y";
 
 function fmtHour(h) {
@@ -667,8 +662,9 @@ function greetingFor(now) {
   const log = document.getElementById("chat-log");
   const input = document.getElementById("chat-input");
   const session = createSession();
-  let mode = null; // {kind:'book'|'qualify', step, data, stage, editKey, plan, qidx}
+  let mode = null; // {kind:'book'|'qualify'|'esc', step, data, stage, editKey, plan, qidx}
   let pendingOffer = null; // service intent whose qualify offer awaits a yes/no
+  let lastMissText = null; // the visitor's first unanswered question, kept so a dead end can restate it
 
   const chatBtn = document.getElementById("chat-btn");
   // Inside another page's widget (an iframe), this page's own launcher
@@ -788,6 +784,14 @@ function greetingFor(now) {
   // Email is never captured anywhere else in the chat; a text number is
   // only re-asked when the flow doesn't already hold one (the booking
   // flow collects a phone number before the qualifiers run).
+  // When a contact detail (method choice, or the address/number itself)
+  // completes, control returns to whichever flow asked for it: the
+  // qualification runner, or the dead-end escalation flow below.
+  function contactComplete() {
+    if (mode && mode.kind === "esc") { escAskInquiry(); return; }
+    advanceQual();
+  }
+
   function contactChoiceInput(text) {
     const n = normalize(text);
     if (n.includes("email") || n.includes("e mail")) {
@@ -798,7 +802,7 @@ function greetingFor(now) {
     }
     if (/\b(text|txt|sms|phone|call|mobile|cell)\b/.test(n)) {
       mode.data.qual.contact = "text";
-      if (mode.data.phone) { advanceQual(); return; }
+      if (mode.data.phone) { contactComplete(); return; }
       mode.contactAsk = "phone";
       addBot(PRIVACY_LINE);
       addBot("What's the best phone number for Jaeger to text you at?");
@@ -822,7 +826,7 @@ function greetingFor(now) {
     if (["skip", "skip this", "pass", "next", "no answer", "rather not say"].includes(n) || isPhoneDecline(text)) {
       mode.contactAsk = null;
       addBot("No problem — we'll leave that off the note. You can always reach Jaeger at " + PHONE_TEXT + ", or through our contact form.");
-      advanceQual();
+      contactComplete();
       return;
     }
     if (kind === "email") {
@@ -834,7 +838,7 @@ function greetingFor(now) {
       mode.data.qual.phone = text;
     }
     mode.contactAsk = null;
-    advanceQual();
+    contactComplete();
   }
 
   function qualifyInput(text) {
@@ -869,6 +873,250 @@ function greetingFor(now) {
     addBot("One honest step left: this chat runs in your browser and can't send messages by itself, so nothing has been sent or stored yet. Tap the form link below and paste that note into the message box — the form only asks for your name, email, and a message — or call or text Jaeger at " + PHONE_TEXT + ".");
     addBotLink("Contact form: ", FORM_URL, "Send it via our contact form");
     addBot("Nothing is booked until Jaeger gets back to you to confirm. Anything else I can help with?");
+  }
+
+  // ---- Dead-end escalation: collect first, THEN hand off ----
+  // (Jaeger, 2026-11-01: "whenever the chatbot dead ends it's fine to
+  // direct them to me, but be sure to data collect first — find out who
+  // they are and what they are inquiring about, get some
+  // demographics etc.") This flow runs ONLY at a genuine dead end: a
+  // question the bot cannot answer (second consecutive miss), or the
+  // visitor asking for a human. Help-first is untouched — anything the
+  // bot CAN answer, it still answers in full with no capture at all.
+  // Order: name → contact (the existing validated email/text branches
+  // above, via contactChoiceInput/contactDetailInput) → the inquiry →
+  // light demographics → a callback time (hours enforced). Name and a
+  // valid contact are REQUIRED before the hand-off completes; the
+  // inquiry is asked and every demographic item can be declined
+  // (recorded as "declined"). Only once the note is built does the bot
+  // name the direct routes (Jaeger's email and phone). The urgent path
+  // is NOT routed through here — safety answers stay immediate.
+  const ESC_NAME_PROMPT = "So Jaeger can help properly, what's your name?";
+  const ESC_DEMO_PROMPTS = [
+    "Is this inquiry for yourself, or for a business?",
+    "What's the business called, and what kind of business is it?",
+    "What city are you in?",
+    "Last one: how did you hear about Prosequences?"
+  ];
+  function isSkipReply(n) {
+    return ["skip", "skip this", "pass", "next", "no answer", "rather not say"].includes(n);
+  }
+
+  function startEsc(trigger, currentText) {
+    pendingOffer = null;
+    let seed = null;
+    if (trigger === "deadend") {
+      seed = (lastMissText && lastMissText !== currentText)
+        ? lastMissText + " — and then: " + currentText
+        : currentText;
+    }
+    lastMissText = null;
+    mode = { kind: "esc", stage: "esc", escStep: "name", trigger, seed,
+             contactAsk: null, demoIdx: 0, data: { qual: {}, demo: {} } };
+    if (trigger === "human") {
+      addBot("Of course — Jaeger is the right person for that, and I'll get you to him. So he can help properly, let me take a couple of quick details first: who you are, how he can reach you, and what it's about.");
+    } else {
+      addBot("I've given that my best shot and I don't want to keep guessing — this one is for Jaeger himself. Before I point you to him, let me take a couple of quick details so he knows who's getting in touch and what it's about. That way his reply actually answers you.");
+    }
+    addBot(ESC_NAME_PROMPT);
+  }
+
+  function escInput(text) {
+    if (isEscape(text)) { escapeFlow(); return; }
+    if (mode.contactAsk) {
+      // The contact detail itself is being asked (email address or phone
+      // number, via the existing validated branches). It is REQUIRED for
+      // the hand-off — a skip here goes back to the method question
+      // rather than completing the hand-off with no way to reply.
+      const n0 = normalize(text);
+      if (isSkipReply(n0) || isPhoneDecline(text)) {
+        mode.contactAsk = null;
+        addBot("I do need one way for Jaeger to reach you — that's the bit that makes the hand-off work. Text or email — which would you rather use?");
+        return;
+      }
+      contactDetailInput(text);
+      return;
+    }
+    if (mode.escStep === "name") { escNameInput(text); return; }
+    if (mode.escStep === "contact") { escContactInput(text); return; }
+    if (mode.escStep === "inquiry") { escInquiryInput(text); return; }
+    if (mode.escStep === "demo") { escDemoInput(text); return; }
+    if (mode.escStep === "when") { escWhenInput(text); return; }
+  }
+
+  function escNameInput(text) {
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. " + ESC_NAME_PROMPT + " Or say “cancel” to stop.");
+      return;
+    }
+    if (isPhoneDecline(text)) {
+      addBot("I understand — and I won't ask for anything beyond what's needed. A name is the one thing I do need, so Jaeger knows who he's replying to. What should he call you? Or say “cancel” to stop altogether.");
+      return;
+    }
+    mode.data.name = text;
+    mode.escStep = "contact";
+    addBot("Thanks, " + text + ". How should Jaeger reach you — by text, or by email?");
+  }
+
+  function escContactInput(text) {
+    // An address or number typed straight away counts as the choice —
+    // the same validated shapes the existing branches accept.
+    const em = findEmail(text);
+    if (em) {
+      mode.data.qual.contact = "email";
+      mode.data.qual.email = em;
+      escAskInquiry();
+      return;
+    }
+    if (/^[\d\s()+.\-]+$/.test(text) && text.replace(/\D/g, "").length >= 7) {
+      mode.data.qual.contact = "text";
+      mode.data.qual.phone = text;
+      escAskInquiry();
+      return;
+    }
+    const n = normalize(text);
+    if (n.includes("email") || n.includes("e mail") ||
+        /\b(text|txt|sms|phone|call|mobile|cell)\b/.test(n)) {
+      contactChoiceInput(text); // existing branch: asks + validates the detail
+      return;
+    }
+    if (isSkipReply(n) || isPhoneDecline(text)) {
+      addBot("That's the one thing I do need — one way for Jaeger to reach you, or he can't reply. Text or email, whichever you're happier sharing.");
+      return;
+    }
+    if (looksLikeQuestion(text)) {
+      addBot("Happy to explain: Jaeger replies personally, so he needs one way to reach you. Text or email — which suits you?");
+      return;
+    }
+    addBot("Text or email — either is fine. Which works better for you?");
+  }
+
+  function escAskInquiry() {
+    mode.contactAsk = null;
+    mode.escStep = "inquiry";
+    if (mode.trigger === "deadend" && mode.seed) {
+      const seed = mode.seed.length > 160 ? mode.seed.slice(0, 157) + "…" : mode.seed;
+      addBot("So I pass the right thing on: you're asking about “" + seed + "” — have I got that right? If you'd put it differently, just type it your way.");
+    } else {
+      addBot("What are you inquiring about — what would you like Jaeger's help with?");
+    }
+  }
+
+  function escInquiryInput(text) {
+    const n = normalize(text);
+    if (mode.trigger === "deadend" && mode.seed) {
+      // Confirming (or declining to restate) keeps their own question as
+      // the inquiry; anything else they type replaces it.
+      const confirmed = isYesReply(n) || isSkipReply(n) || n === normalize(mode.seed) ||
+        ["correct", "right", "exactly", "that s right", "thats right"].includes(n);
+      mode.data.inquiry = confirmed ? mode.seed : text;
+    } else {
+      mode.data.inquiry = (isSkipReply(n) || isPhoneDecline(text)) ? "(not stated)" : text;
+    }
+    mode.escStep = "demo";
+    mode.demoIdx = 0;
+    addBot("A couple of quick things so he knows the picture before he replies — every one is optional; just say “skip” for any you'd rather not answer.");
+    addBot(ESC_DEMO_PROMPTS[0]);
+  }
+
+  function escDemoInput(text) {
+    const prompt = ESC_DEMO_PROMPTS[mode.demoIdx];
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. " + prompt + " Or say “skip”, or “cancel” to stop.");
+      return;
+    }
+    const n = normalize(text);
+    const skip = isSkipReply(n);
+    const d = mode.data.demo;
+    if (mode.demoIdx === 0) {
+      if (skip) { d.who = "declined"; mode.demoIdx = 2; addBot(ESC_DEMO_PROMPTS[2]); return; }
+      if (/\b(business|company|shop|store|work|employer|firm|llc|restaurant|salon|studio)\b/.test(n)) {
+        d.who = "business";
+        mode.demoIdx = 1;
+        addBot(ESC_DEMO_PROMPTS[1]);
+        return;
+      }
+      d.who = ["personal", "myself", "me", "for me"].includes(n) ? "personal" : text;
+      mode.demoIdx = 2;
+      addBot(ESC_DEMO_PROMPTS[2]);
+      return;
+    }
+    if (mode.demoIdx === 1) {
+      d.bizDetail = skip ? "declined" : text;
+      mode.demoIdx = 2;
+      addBot(ESC_DEMO_PROMPTS[2]);
+      return;
+    }
+    if (mode.demoIdx === 2) {
+      d.city = skip ? "declined" : text;
+      mode.demoIdx = 3;
+      addBot(ESC_DEMO_PROMPTS[3]);
+      return;
+    }
+    d.source = skip ? "declined" : text;
+    escAskWhen();
+  }
+
+  function escAskWhen() {
+    mode.escStep = "when";
+    const open = SCHEDULE[1][0], close = SCHEDULE[1][1];
+    addBot("Would you like Jaeger to call you back at a particular time? He's around " + fmtTimeFloat(open) + "–" + fmtTimeFloat(close) + " Pacific, every day — name a time in that window, or just say “whenever”.");
+  }
+
+  function escWhenInput(text) {
+    // Hours enforcement, identical rule to the booking flow: an
+    // out-of-hours request gets the correction (no promise, hours
+    // restated, nearest in-hours alternative) and the step stays open.
+    const problem = contactTimeProblem(text);
+    if (problem) { mode.data.askedTime = text; addBot(problem); return; }
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. Name a time between " + fmtTimeFloat(SCHEDULE[1][0]) + " and " + fmtTimeFloat(SCHEDULE[1][1]) + " Pacific, or just say “whenever”.");
+      return;
+    }
+    if (mode.data.askedTime) {
+      mode.data.callback = /\b(message|opening)\b/i.test(text)
+        ? "a message for the next opening (first asked " + mode.data.askedTime + ", outside hours)"
+        : text + " (first asked " + mode.data.askedTime + ", outside hours)";
+    } else {
+      mode.data.callback = text;
+    }
+    finishEsc();
+  }
+
+  // The escalation note mirrors the booking summary's shape, with the
+  // inquiry and demographics riding in its Qualified line — the same
+  // line the lead pipeline already reads.
+  function escSummaryText(d) {
+    const contact = d.qual.contact === "email" ? d.qual.email
+      : (d.qual.contact === "text" ? d.qual.phone : "");
+    let s = d.name + ", " + contact + ", about: " + d.inquiry;
+    if (d.callback) s += ", callback: " + d.callback;
+    const demo = d.demo || {};
+    const who = demo.who === "business"
+      ? "business" + (demo.bizDetail && demo.bizDetail !== "declined" ? " — " + demo.bizDetail : "")
+      : demo.who;
+    const qs = qualSummaryText({
+      qualLabel: "Hand-off to Jaeger",
+      qual: { contact: d.qual.contact, email: d.qual.email, phone: d.qual.phone,
+              specific: ["who: " + (who || "declined"),
+                         "city: " + (demo.city || "declined"),
+                         "heard: " + (demo.source || "declined")].join(" · ") }
+    });
+    if (qs) s += ". " + qs;
+    return s;
+  }
+
+  // The hand-off itself: the note rides the SAME contact-form hand-off
+  // as every other lead (form dbEa8y → lead pipeline), the visitor is
+  // told Jaeger himself will reply within business hours — and only now
+  // are the direct routes (his email, his number) named.
+  function finishEsc() {
+    const d = mode.data; mode = null;
+    const open = SCHEDULE[1][0], close = SCHEDULE[1][1];
+    addBot("Thank you, " + d.name + " — here's the note for Jaeger: " + escSummaryText(d) + ".");
+    addBot("One honest step left: this chat runs in your browser and can't send messages by itself, so nothing has been sent or stored yet. Tap the form link below and paste that note into the message box — the form only asks for your name, email, and a message. Jaeger himself will get back to you — he's around " + fmtTimeFloat(open) + "–" + fmtTimeFloat(close) + " Pacific, every day.");
+    addBotLink("Contact form: ", FORM_URL, "Send it via our contact form");
+    addBot("And if you'd rather reach him directly, now your details are on their way: email " + EMAIL_TEXT + ", or call or text " + PHONE_TEXT + ". Anything else I can help with?");
   }
 
   // The offer itself: shown ONCE, after a service answer that carried
@@ -996,6 +1244,7 @@ function greetingFor(now) {
   }
 
   function flowInput(text) {
+    if (mode.stage === "esc") { escInput(text); return; }
     if (mode.stage === "bqual" || mode.stage === "q") { qualifyInput(text); return; }
     if (mode.stage === "confirm") { confirmInput(text); return; }
     if (mode.stage === "which") { whichInput(text); return; }
@@ -1024,7 +1273,7 @@ function greetingFor(now) {
 
   function handleMenu(act) {
     if (act === "book") { startFlow("book"); return; }
-    if (act === "human") { addBot(HANDOFF_ANSWER); return; }
+    if (act === "human") { startEsc("human", null); return; }
     if (act === "services") { addBot(FAQ_BY_INTENT.services_overview.answer); return; }
     if (act === "mission") { addBot(FAQ_BY_INTENT.mission.answer); return; }
     if (act === "projects") { addBot(FAQ_BY_INTENT.projects.answer); return; }
@@ -1055,6 +1304,14 @@ function greetingFor(now) {
       pendingOffer = null; // a new question supersedes the offer
     }
     const r = classify(session, q, {});
+    // Dead ends collect first, THEN hand off (Jaeger, 2026-11-01): a
+    // human ask or a second consecutive miss starts the escalation
+    // capture instead of printing the direct routes. The first miss
+    // still gets the plain fallback answer — and is remembered so the
+    // escalation can restate the visitor's question for confirmation.
+    if (r.intent === "handoff") { startEsc("human", q); return; }
+    if (r.intent === "fallback-2") { startEsc("deadend", q); return; }
+    if (r.intent === "fallback") lastMissText = q; else lastMissText = null;
     addBot(r.answer);
     if (r.flow === "flow-2-booking-request") startFlow("book");
     else maybeOfferQualify(r, q);
