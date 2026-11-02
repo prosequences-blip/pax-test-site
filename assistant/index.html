@@ -14,6 +14,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Chat with Pax — Prosequences Assistant | Book a Service">
 <meta name="twitter:description" content="Chat with Pax, the Prosequences assistant: ask about computer help, bookkeeping, websites, translation and more, or start a booking request. Open daily 12-7.">
+<script>if (typeof window !== "undefined" && window.self !== window.top) { document.documentElement.classList.add("embedded"); }</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -136,11 +137,11 @@
   .card .note { color: var(--muted); font-size: .92rem; }
   footer { max-width: 720px; margin: 0 auto; padding: 0 1.2rem 2rem; color: var(--muted); font-size: .85rem; line-height: 1.6; }
   footer a { color: var(--accent); }
+  #chat-btn.away { display: none; }
   #chat-btn { position: fixed; right: 20px; bottom: 20px; padding: 13px 20px; border: 0; border-radius: 999px; background: linear-gradient(135deg,#f5b942,#e07b39); color: var(--dark); font-size: 1rem; font-weight: 650; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
   #chat-panel { display: none; position: fixed; right: 20px; bottom: 78px; width: 360px; max-width: 92vw; height: 520px; max-height: 78vh; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.45); flex-direction: column; overflow: hidden; }
   #chat-panel.open { display: flex; }
-  #chat-head { background: linear-gradient(135deg,#f5b942,#e07b39); color: var(--dark); padding: 10px 14px; font-weight: 650; }
-  #chat-head small { display:block; font-weight: 400; opacity:.8; }
+  #chat-head { background: #2e7d4f; color: #fff; padding: 8px 12px; font-weight: 600; font-size: .95rem; }
   #chat-log { flex: 1; overflow-y: auto; padding: 12px; background: #0f1a30; }
   #chat-log p { margin: .45em 0; line-height: 1.45; max-width: 92%; }
   .bot { color: var(--ink); }
@@ -154,6 +155,10 @@
   #chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
   #chat-input { flex: 1; padding: 9px; border: 1px solid var(--line); border-radius: 8px; font-size: .95rem; background: #0f1a30; color: var(--ink); }
   #chat-form button { background: linear-gradient(135deg,#f5b942,#e07b39); color: var(--dark); font-weight: 650; border: 0; border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+  html.embedded main, html.embedded footer { display: none; }
+  html.embedded #chat-btn { display: none; }
+  html.embedded #chat-head { display: none; }
+  html.embedded #chat-panel { display: flex; position: fixed; inset: 0; width: auto; max-width: none; height: auto; max-height: none; right: 0; bottom: 0; border: 0; border-radius: 0; box-shadow: none; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head>
@@ -178,7 +183,7 @@ Want to see what a bot like this looks like for a small business? Try our <a hre
 
 <button id="chat-btn" type="button">Chat with Pax</button>
 <div id="chat-panel" role="dialog" aria-label="Chat panel">
-  <div id="chat-head">Pax · Prosequences assistant <small>Here to help — answers right away, no waiting.</small></div>
+  <div id="chat-head">Pax · Prosequences assistant</div>
   <div id="chat-log" role="log" aria-live="polite" aria-label="Conversation"></div>
   <div id="chat-menu">
     <button type="button" data-act="mission">🌿 Our mission</button>
@@ -432,7 +437,12 @@ function qualSummaryText(d) {
   if (label) parts.push(label);
   if (q.biz) parts.push(q.biz);
   if (q.timeline) parts.push(q.timeline);
-  if (q.contact) parts.push("prefers " + q.contact);
+  if (q.contact) {
+    let c = "prefers " + q.contact;
+    const detail = q.contact === "email" ? q.email : (q.contact === "text" ? q.phone : null);
+    if (detail) c += " (" + detail + ")";
+    parts.push(c);
+  }
   if (q.specific) parts.push(q.specific);
   if (!parts.length) return "";
   const extras = [q.biz, q.timeline, q.contact, q.specific].filter(Boolean).length;
@@ -447,6 +457,67 @@ function parseClockRef(normText) {
   if (m2) return parseInt(m2[1], 10) + parseInt(m2[2], 10) / 60;
   return null;
 }
+
+// Parse a requested contact time from RAW text ("7 am", "7:00 AM",
+// "19:30", "3pm tomorrow", "noon", "7 in the morning") into an hour
+// float, or null when no clock time is stated. Raw text is required:
+// normalize() destroys the ":" in "7:00".
+function parseTimeRequest(rawText) {
+  const t = " " + (rawText || "").toLowerCase() + " ";
+  if (/\bnoon\b/.test(t)) return 12;
+  if (/\bmidnight\b/.test(t)) return 0;
+  let m = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
+  if (m) {
+    let h = parseInt(m[1], 10) % 12;
+    if (m[3] === "pm") h += 12;
+    return h + (m[2] ? parseInt(m[2], 10) / 60 : 0);
+  }
+  m = t.match(/\b(\d{1,2})\s*(?:o'clock\s*)?in the morning\b/);
+  if (m) return parseInt(m[1], 10) % 12;
+  m = t.match(/\b(\d{1,2})\s*(?:o'clock\s*)?in the (?:afternoon|evening)\b/);
+  if (m) return (parseInt(m[1], 10) % 12) + 12;
+  m = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if (m) return parseInt(m[1], 10) + parseInt(m[2], 10) / 60;
+  return null;
+}
+
+function fmtTimeFloat(hf) {
+  let h = Math.floor(hf), min = Math.round((hf - h) * 60);
+  if (min === 60) { h += 1; min = 0; }
+  const suffix = (h % 24) < 12 ? "AM" : "PM";
+  let hh = h % 12; if (hh === 0) hh = 12;
+  return hh + ":" + (min < 10 ? "0" : "") + min + " " + suffix;
+}
+
+// Hours enforcement for a requested contact time. Returns null when the
+// request states no time or a time inside business hours; otherwise the
+// correction the bot must give: it cannot promise contact outside
+// hours, it restates the hours, and it offers the nearest in-hours
+// alternative (or a message for the next opening). Hours are the same
+// every day and come from SCHEDULE — never restated by hand.
+function contactTimeProblem(rawText) {
+  const hf = parseTimeRequest(rawText);
+  if (hf === null) return null;
+  const open = SCHEDULE[1][0], close = SCHEDULE[1][1];
+  if (hf >= open && hf < close) return null;
+  const asked = fmtTimeFloat(hf);
+  if (hf < open) {
+    return "I can't promise a call at " + asked + " — we're not around then, and I don't want to agree to a time we can't keep. Our hours are " +
+      HOURS_TEXT + " Pacific, every day. The earliest I can note is " + fmtTimeFloat(open) +
+      " — would that work? Or name any time between " + fmtTimeFloat(open) + " and " + fmtTimeFloat(close) +
+      ", or tell me to take a message for when we open.";
+  }
+  return "I can't promise a call at " + asked + " — we're closed by then, and I don't want to agree to a time we can't keep. Our hours are " +
+    HOURS_TEXT + " Pacific, every day. I can note any time before we close at " + fmtTimeFloat(close) +
+    ", or " + fmtTimeFloat(open) + " the next day — which suits you? Or tell me to take a message for the next opening.";
+}
+
+// First email-shaped token in a piece of text, or null.
+function findEmail(text) {
+  const m = (text || "").match(/[^\s@]+@[^\s@]+\.[^\s@]{2,}/);
+  return m ? m[0].replace(/[.,;]+$/, "") : null;
+}
+function isEmailAddress(text) { return !!findEmail(text); }
 
 function createSession() { return { misses: 0 }; }
 
@@ -593,13 +664,29 @@ function greetingFor(now) {
   let mode = null; // {kind:'book'|'qualify', step, data, stage, editKey, plan, qidx}
   let pendingOffer = null; // service intent whose qualify offer awaits a yes/no
 
-  document.getElementById("chat-btn").addEventListener("click", () => {
+  const chatBtn = document.getElementById("chat-btn");
+  // Inside another page's widget (an iframe), this page's own launcher
+  // and header are duplicates — the wrapper provides both. Embedded mode
+  // hides them via CSS and opens the chat directly, filling the frame.
+  const EMBEDDED = (typeof window !== "undefined") && window.self !== window.top;
+  function greet() {
+    log.dataset.greeted = "1";
+    // The old header tagline, as a one-line welcome INSIDE the flow: it
+    // scrolls away with the conversation instead of crowding it.
+    addBot("Here to help — answers right away, no waiting.");
+    addBot(greetingFor(new Date()));
+  }
+  chatBtn.addEventListener("click", () => {
     panel.classList.toggle("open");
-    if (panel.classList.contains("open") && !log.dataset.greeted) {
-      log.dataset.greeted = "1";
-      addBot(greetingFor(new Date()));
-    }
+    const open = panel.classList.contains("open");
+    // Exactly one launcher, and it disappears while the chat is open.
+    chatBtn.classList.toggle("away", open);
+    if (open && !log.dataset.greeted) greet();
   });
+  if (EMBEDDED && !panel.classList.contains("open")) {
+    panel.classList.toggle("open");
+    greet();
+  }
 
   function addLine(cls, text) {
     const p = document.createElement("p"); p.className = cls;
@@ -630,7 +717,7 @@ function greetingFor(now) {
     { key: "name", prompt: "Sure — what's your name?" },
     { key: "phone", prompt: "Thanks. What's the best phone number for Jaeger to call you back?", pre: PRIVACY_LINE, validate: v => (v.replace(/\D/g, "").length >= 7) || "That doesn't look like a full phone number — could you re-enter it?" },
     { key: "service", prompt: "Which service is this about — computer help & AI setup, translation, a one-page website, bookkeeping, social media content packs, copywriting, or inbox detox? Your own words are fine too." },
-    { key: "when", prompt: "What day and time would suit you for a short intro call? We're around " + HOURS_SHORT + "." },
+    { key: "when", prompt: "What day and time would suit you for a short intro call? We're around " + HOURS_SHORT + ".", validate: v => contactTimeProblem(v) || true },
     { key: "status", prompt: "Last one: are you a new client, or have you worked with us before?" }
   ];
 
@@ -690,8 +777,63 @@ function greetingFor(now) {
     addBot(mode.plan[0].prompt);
   }
 
+  // The preferred-contact question is only half the capture: whichever
+  // method the visitor picks, ask for the address or number itself.
+  // Email is never captured anywhere else in the chat; a text number is
+  // only re-asked when the flow doesn't already hold one (the booking
+  // flow collects a phone number before the qualifiers run).
+  function contactChoiceInput(text) {
+    const n = normalize(text);
+    if (n.includes("email") || n.includes("e mail")) {
+      mode.data.qual.contact = "email";
+      mode.contactAsk = "email";
+      addBot("What's the best email address for Jaeger to reach you at?");
+      return;
+    }
+    if (/\b(text|txt|sms|phone|call|mobile|cell)\b/.test(n)) {
+      mode.data.qual.contact = "text";
+      if (mode.data.phone) { advanceQual(); return; }
+      mode.contactAsk = "phone";
+      addBot(PRIVACY_LINE);
+      addBot("What's the best phone number for Jaeger to text you at?");
+      return;
+    }
+    // No clear method named — keep their words and move on.
+    mode.data.qual.contact = text;
+    advanceQual();
+  }
+
+  function contactDetailInput(text) {
+    const kind = mode.contactAsk;
+    const prompt = kind === "email"
+      ? "What's the best email address for Jaeger to reach you at?"
+      : "What's the best phone number for Jaeger to text you at?";
+    if (looksLikeQuestion(text)) {
+      addBot("That sounds like a question — I don't want to lose your place. " + prompt + " Or say “skip”, or “cancel” to stop.");
+      return;
+    }
+    const n = normalize(text);
+    if (["skip", "skip this", "pass", "next", "no answer", "rather not say"].includes(n) || isPhoneDecline(text)) {
+      mode.contactAsk = null;
+      addBot("No problem — we'll leave that off the note. You can always reach Jaeger at " + PHONE_TEXT + ", or through our contact form.");
+      advanceQual();
+      return;
+    }
+    if (kind === "email") {
+      const em = findEmail(text);
+      if (!em) { addBot("That doesn't look like an email address — it should look like name@example.com. Could you re-enter it? Or say “skip” to leave it off."); return; }
+      mode.data.qual.email = em;
+    } else {
+      if (text.replace(/\D/g, "").length < 7) { addBot("That doesn't look like a full phone number — could you re-enter it? Or say “skip” to leave it off."); return; }
+      mode.data.qual.phone = text;
+    }
+    mode.contactAsk = null;
+    advanceQual();
+  }
+
   function qualifyInput(text) {
     if (isEscape(text)) { escapeFlow(); return; }
+    if (mode.contactAsk) { contactDetailInput(text); return; }
     const n = normalize(text);
     if (n.includes("just book") || n.includes("skip all") || n === "skip everything") { finishQualifiers(); return; }
     if (["skip", "skip this", "pass", "next", "no answer", "rather not say"].includes(n)) { advanceQual(); return; }
@@ -699,6 +841,7 @@ function greetingFor(now) {
       addBot("That sounds like a question — I don't want to lose your place. " + mode.plan[mode.qidx].prompt + " Or say “skip”, or “cancel” to stop.");
       return;
     }
+    if (mode.plan[mode.qidx].key === "contact") { contactChoiceInput(text); return; }
     mode.data.qual[mode.plan[mode.qidx].key] = text;
     advanceQual();
   }
@@ -828,6 +971,10 @@ function greetingFor(now) {
   function editInput(text) {
     const field = BOOK_FIELDS.find(f => f.key === mode.editKey);
     if (isEscape(text)) { escapeFlow(); return; }
+    if (field.key === "when" && field.validate) {
+      const verdict = field.validate(text);
+      if (verdict !== true) { addBot(verdict); return; }
+    }
     if (looksLikeQuestion(text)) {
       addBot("That sounds like a question — I don't want to lose your place. " + field.prompt + " Or say “cancel” to stop.");
       return;
@@ -849,6 +996,10 @@ function greetingFor(now) {
     if (mode.stage === "edit") { editInput(text); return; }
     const field = BOOK_FIELDS[mode.step];
     if (isEscape(text)) { escapeFlow(); return; }
+    if (field.key === "when" && field.validate) {
+      const verdict = field.validate(text);
+      if (verdict !== true) { addBot(verdict); return; }
+    }
     if (looksLikeQuestion(text)) {
       addBot("That sounds like a question — I don't want to lose your place. We're on this step: " + field.prompt + " Type your answer to keep going, or say “cancel” to stop.");
       return;
