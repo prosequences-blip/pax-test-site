@@ -161,3 +161,22 @@ a.btn:hover, a.buy:hover{ transform:translateY(-1px); box-shadow:0 12px 26px rgb
   text-align:center; color:#9fb4a4; font-size:.92rem; margin-top:34px; line-height:1.65;
 }
 @media (max-width:560px){ .home-wrap section{ padding:22px 18px 16px; } }
+
+/* ---------- Shop product panels — deep-green collection treatment ----------
+   Tier D of the colorways wave (approved 2026-11-03): the shop's product
+   sections sit on deep-green panels in the house palette, so the dark
+   garments read as a collection instead of floating on the navy ground.
+   .product-section exists only on shop.html. Presentation only. */
+.product-section{
+  background:linear-gradient(165deg, var(--ps-pine) 0%, var(--ps-deep) 80%);
+  border:1px solid rgba(245,185,66,.28);
+  border-radius:20px;
+  padding:clamp(1.2rem, 3vw, 2.2rem);
+  margin:2.4rem auto;
+}
+.product-section .card,
+.product-section .product-card{
+  background:linear-gradient(170deg, rgba(46,125,79,.22), rgba(8,19,13,.55));
+  border-color:rgba(245,185,66,.32);
+}
+.product-section .price{ color:var(--ps-gold); }
